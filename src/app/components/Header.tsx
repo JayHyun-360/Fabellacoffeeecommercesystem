@@ -1,6 +1,6 @@
 import { ShoppingCart, Menu, X, Search, History } from 'lucide-react';
 import { useState } from 'react';
-import logoImg from '../../imports/682647092_1003572885576744_6281145652749970918_n.jpg';
+import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
 
 interface HeaderProps {
   cartCount: number;
@@ -17,12 +17,13 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
       <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-10">
           {/* Logo */}
-          <a href="#" className="flex items-center flex-shrink-0">
+          <a href="#" className="flex items-center gap-3 flex-shrink-0">
             <img
               src={logoImg}
               alt="Fabella Coffee"
-              className="h-14 w-auto object-contain"
+              className="h-14 w-14 object-contain"
             />
+            <span className="text-xl tracking-tight font-medium">FABELLA COFFEE</span>
           </a>
 
           <nav className="hidden md:flex gap-8">
