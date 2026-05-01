@@ -23,7 +23,7 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
               alt="Fabella Coffee"
               className="h-14 w-14 object-contain"
             />
-            <span className="text-xl tracking-tight font-medium">FABELLA COFFEE</span>
+            <span className="text-sm tracking-tight font-medium">FABELLA COFFEE</span>
           </a>
 
           <nav className="hidden md:flex gap-8">
@@ -52,19 +52,19 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
             <Search className="w-5 h-5" />
           </button>
 
-          {/* Order History */}
+          {/* Order History - Hidden on mobile */}
           <button
             onClick={onHistoryClick}
-            className="hover:opacity-60 transition-opacity"
+            className="hidden md:block hover:opacity-60 transition-opacity"
             title="Order History"
           >
             <History className="w-5 h-5" />
           </button>
 
-          {/* Cart */}
+          {/* Cart - Hidden on mobile */}
           <button
             onClick={onCartClick}
-            className="relative hover:opacity-60 transition-opacity"
+            className="hidden md:block relative hover:opacity-60 transition-opacity"
           >
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
@@ -90,6 +90,35 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
           <a href="#food" onClick={() => setMobileMenuOpen(false)} className="hover:opacity-60 transition-opacity py-2">Food</a>
           <a href="#pastries" onClick={() => setMobileMenuOpen(false)} className="hover:opacity-60 transition-opacity py-2">Pastries</a>
           <a href="#beverages" onClick={() => setMobileMenuOpen(false)} className="hover:opacity-60 transition-opacity py-2">Beverages</a>
+
+          <div className="border-t border-gray-200 pt-4 mt-2">
+            <button
+              onClick={() => {
+                onHistoryClick();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-3 hover:opacity-60 transition-opacity py-2"
+            >
+              <History className="w-5 h-5" />
+              <span>Order History</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onCartClick();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-3 hover:opacity-60 transition-opacity py-2 relative"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              <span>Cart</span>
+              {cartCount > 0 && (
+                <span className="ml-auto bg-black text-white text-xs px-2 py-1 rounded-full">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+          </div>
         </nav>
       )}
     </header>
