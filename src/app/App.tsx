@@ -3,6 +3,10 @@ import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { MenuSection } from './components/MenuSection';
 import { Cart } from './components/Cart';
+import { Checkout } from './components/Checkout';
+import { OrderHistory } from './components/OrderHistory';
+import { SearchModal } from './components/SearchModal';
+import type { SavedOrder } from './components/OrderHistory';
 
 interface Product {
   id: number;
@@ -41,7 +45,11 @@ const products: Product[] = [
 
 export default function App() {
   const [cartOpen, setCartOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [orderHistory, setOrderHistory] = useState<SavedOrder[]>([]);
 
   const addToCart = (product: Product) => {
     setCartItems((items) => {
@@ -75,9 +83,35 @@ export default function App() {
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  const handleCheckout = () => {
+    setCartOpen(false);
+    setCheckoutOpen(true);
+  };
+
+  const handleOrderComplete = (order: SavedOrder) => {
+    setCartItems([]);
+    setCheckoutOpen(false);
+    setOrderHistory((prev) => [...prev, order]);
+  };
+
+  const handleUpdateOrderStatus = (orderNumber: string, newStatus: SavedOrder['status']) => {
+    setOrderHistory((prev) =>
+      prev.map((order) =>
+        order.orderNumber === orderNumber
+          ? { ...order, status: newStatus }
+          : order
+      )
+    );
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      <Header cartCount={cartCount} onCartClick={() => setCartOpen(true)} />
+      <Header
+        cartCount={cartCount}
+        onCartClick={() => setCartOpen(true)}
+        onHistoryClick={() => setHistoryOpen(true)}
+        onSearchClick={() => setSearchOpen(true)}
+      />
 
       <Hero />
 
@@ -164,6 +198,28 @@ export default function App() {
         items={cartItems}
         onUpdateQuantity={updateQuantity}
         onRemove={removeFromCart}
+        onCheckout={handleCheckout}
+      />
+
+      <Checkout
+        isOpen={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        items={cartItems}
+        onOrderComplete={handleOrderComplete}
+      />
+
+      <OrderHistory
+        isOpen={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        orders={orderHistory}
+        onUpdateStatus={handleUpdateOrderStatus}
+      />
+
+      <SearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        products={products}
+        onAddToCart={addToCart}
       />
     </div>
   );

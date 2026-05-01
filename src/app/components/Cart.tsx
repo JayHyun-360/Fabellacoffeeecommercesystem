@@ -13,9 +13,10 @@ interface CartProps {
   items: CartItem[];
   onUpdateQuantity: (id: number, quantity: number) => void;
   onRemove: (id: number) => void;
+  onCheckout: () => void;
 }
 
-export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemove }: CartProps) {
+export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemove, onCheckout }: CartProps) {
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   if (!isOpen) return null;
@@ -89,7 +90,9 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemove }: Car
                 <span>₱{total}</span>
               </div>
 
-              <button className="w-full py-3 bg-black text-white hover:bg-black/80 transition-all rounded-full shadow-md hover:shadow-lg">
+              <button className="w-full py-3 bg-black text-white hover:bg-black/80 transition-all rounded-full shadow-md hover:shadow-lg"
+                onClick={onCheckout}
+              >
                 Proceed to Checkout
               </button>
 

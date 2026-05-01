@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import heroImg from '../../imports/682530946_1011749808048143_8253999997136808313_n.jpg';
 
 const slides = [
   {
     title: "Fabella Coffee",
     subtitle: "Crafted with Precision",
     description: "Experience the finest specialty coffee, roasted to perfection",
-    image: "https://images.unsplash.com/photo-1521017432531-fbd92d768814?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBzaG9wJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzc3Mzg3MTY1fDA&ixlib=rb-4.1.0&q=80&w=1080"
+    image: heroImg
   },
   {
     title: "Fresh Pastries",

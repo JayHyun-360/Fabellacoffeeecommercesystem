@@ -1,33 +1,66 @@
-import { ShoppingCart, Menu, X, Search } from 'lucide-react';
+import { ShoppingCart, Menu, X, Search, History } from 'lucide-react';
 import { useState } from 'react';
+import logoImg from '../../imports/682647092_1003572885576744_6281145652749970918_n.jpg';
 
 interface HeaderProps {
   cartCount: number;
   onCartClick: () => void;
+  onHistoryClick: () => void;
+  onSearchClick: () => void;
 }
 
-export function Header({ cartCount, onCartClick }: HeaderProps) {
+export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-12">
-          <h1 className="text-2xl tracking-tight">FABELLA</h1>
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm shadow-sm">
+      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-10">
+          {/* Logo */}
+          <a href="#" className="flex items-center flex-shrink-0">
+            <img
+              src={logoImg}
+              alt="Fabella Coffee"
+              className="h-14 w-auto object-contain"
+            />
+          </a>
 
           <nav className="hidden md:flex gap-8">
-            <a href="#coffee" className="hover:opacity-60 transition-opacity">Coffee</a>
-            <a href="#food" className="hover:opacity-60 transition-opacity">Food</a>
-            <a href="#pastries" className="hover:opacity-60 transition-opacity">Pastries</a>
-            <a href="#beverages" className="hover:opacity-60 transition-opacity">Beverages</a>
+            <a href="#coffee" className="hover:opacity-60 transition-opacity text-sm">Coffee</a>
+            <a href="#food" className="hover:opacity-60 transition-opacity text-sm">Food</a>
+            <a href="#pastries" className="hover:opacity-60 transition-opacity text-sm">Pastries</a>
+            <a href="#beverages" className="hover:opacity-60 transition-opacity text-sm">Beverages</a>
           </nav>
         </div>
 
-        <div className="flex items-center gap-6">
-          <button className="hover:opacity-60 transition-opacity hidden md:block">
+        <div className="flex items-center gap-5">
+          {/* Search */}
+          <button
+            onClick={onSearchClick}
+            className="hover:opacity-60 transition-opacity hidden md:flex items-center gap-2 text-sm text-gray-500 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-full"
+          >
+            <Search className="w-4 h-4" />
+            <span className="hidden lg:block">Search menu…</span>
+          </button>
+
+          {/* Mobile search icon */}
+          <button
+            onClick={onSearchClick}
+            className="md:hidden hover:opacity-60 transition-opacity"
+          >
             <Search className="w-5 h-5" />
           </button>
 
+          {/* Order History */}
+          <button
+            onClick={onHistoryClick}
+            className="hover:opacity-60 transition-opacity"
+            title="Order History"
+          >
+            <History className="w-5 h-5" />
+          </button>
+
+          {/* Cart */}
           <button
             onClick={onCartClick}
             className="relative hover:opacity-60 transition-opacity"
@@ -40,6 +73,7 @@ export function Header({ cartCount, onCartClick }: HeaderProps) {
             )}
           </button>
 
+          {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden"
@@ -50,11 +84,11 @@ export function Header({ cartCount, onCartClick }: HeaderProps) {
       </div>
 
       {mobileMenuOpen && (
-        <nav className="md:hidden px-6 py-4 flex flex-col gap-4 bg-gray-50/80 backdrop-blur-sm">
-          <a href="#coffee" className="hover:opacity-60 transition-opacity py-2">Coffee</a>
-          <a href="#food" className="hover:opacity-60 transition-opacity py-2">Food</a>
-          <a href="#pastries" className="hover:opacity-60 transition-opacity py-2">Pastries</a>
-          <a href="#beverages" className="hover:opacity-60 transition-opacity py-2">Beverages</a>
+        <nav className="md:hidden px-6 py-4 flex flex-col gap-4 bg-gray-50/80 backdrop-blur-sm border-t border-gray-100">
+          <a href="#coffee" onClick={() => setMobileMenuOpen(false)} className="hover:opacity-60 transition-opacity py-2">Coffee</a>
+          <a href="#food" onClick={() => setMobileMenuOpen(false)} className="hover:opacity-60 transition-opacity py-2">Food</a>
+          <a href="#pastries" onClick={() => setMobileMenuOpen(false)} className="hover:opacity-60 transition-opacity py-2">Pastries</a>
+          <a href="#beverages" onClick={() => setMobileMenuOpen(false)} className="hover:opacity-60 transition-opacity py-2">Beverages</a>
         </nav>
       )}
     </header>
