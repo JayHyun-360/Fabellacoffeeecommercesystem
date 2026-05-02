@@ -138,7 +138,7 @@ function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatu
               </p>
               <p className="text-gray-700 truncate">
                 {order.deliveryType === 'pickup'
-                  ? 'Makati Branch'
+                  ? 'Ramz Square Branch'
                   : order.address
                   ? `${order.address}${order.city ? `, ${order.city}` : ''}`
                   : '—'}

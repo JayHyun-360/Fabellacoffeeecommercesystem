@@ -186,7 +186,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack }: {
             <MapPin className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm">Fabella Coffee — Main Branch</p>
-              <p className="text-sm text-gray-500">123 Café Street, Makati City</p>
+              <p className="text-sm text-gray-500">Ramz Square, Bislig, Philippines, 8311</p>
               <p className="text-sm text-gray-500 mt-1">Mon–Fri: 6am–10pm · Sat–Sun: 7am–11pm</p>
             </div>
           </div>
