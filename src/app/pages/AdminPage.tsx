@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router';
 import {
   LayoutDashboard, UtensilsCrossed, Receipt, Settings, ArrowLeft,
   TrendingUp, ShoppingBag, Coffee, Package, Plus, Pencil, Trash2,
-  Eye, EyeOff, X, Check, Search, Filter, Image, ChevronDown,
-  Store, Users, BarChart3, Star, Upload, Minus, AlertCircle
+  Eye, EyeOff, X, Check, Search, Image, ChevronDown,
+  BarChart3, Star, AlertCircle,
+  Banknote, Smartphone, CreditCard
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
@@ -25,11 +26,11 @@ const CATEGORY_COLORS: Record<string, string> = {
   pastries: 'bg-pink-100 text-pink-800', beverages: 'bg-blue-100 text-blue-800',
 };
 
-const STATUS_CONFIG: Record<SavedOrder['status'], { label: string; badge: string }> = {
-  pending: { label: 'Pending', badge: 'bg-amber-50 text-amber-700' },
-  cancelled: { label: 'Cancelled', badge: 'bg-red-50 text-red-700' },
-  ongoing: { label: 'On Delivery', badge: 'bg-blue-50 text-blue-700' },
-  received: { label: 'Completed', badge: 'bg-green-50 text-green-700' },
+const STATUS_CONFIG: Record<SavedOrder['status'], { label: string; badge: string; dot: string }> = {
+  pending:   { label: 'Pending',     badge: 'bg-amber-50 text-amber-700 border border-amber-200',  dot: 'bg-amber-400'  },
+  cancelled: { label: 'Cancelled',   badge: 'bg-red-50 text-red-700 border border-red-200',        dot: 'bg-red-400'    },
+  ongoing:   { label: 'In Progress', badge: 'bg-blue-50 text-blue-700 border border-blue-200',     dot: 'bg-blue-400'   },
+  received:  { label: 'Completed',   badge: 'bg-green-50 text-green-700 border border-green-200',  dot: 'bg-green-400'  },
 };
 
 // ─── Product Modal ───────────────────────────────────────────────────────────
@@ -352,7 +353,7 @@ function DashboardSection() {
   );
 }
 
-// ─── Menu Management Section ──────────────────────���──────────────────────────
+// ─── Menu Management Section ────────────────────────────────────────────────
 
 function MenuManagementSection() {
   const { products, addProduct, updateProduct, deleteProduct, toggleProductAvailability } = useApp();
@@ -519,151 +520,246 @@ function MenuManagementSection() {
 
 // ─── Transactions Section ─────────────────────────────────────────────────────
 
+const ORDER_TYPE_CFG: Record<string, { label: string; bg: string; text: string }> = {
+  'delivery': { label: 'Delivery',  bg: 'bg-blue-50',    text: 'text-blue-700'    },
+  'pickup':   { label: 'Pick Up',   bg: 'bg-purple-50',  text: 'text-purple-700'  },
+  'dine-in':  { label: 'Dine In',   bg: 'bg-amber-50',   text: 'text-amber-700'   },
+  'takeout':  { label: 'Takeout',   bg: 'bg-emerald-50', text: 'text-emerald-700' },
+};
+
+const PAYMENT_CFG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  cod:   { label: 'Cash',  color: 'text-gray-700',   icon: <Banknote className="w-3.5 h-3.5" />   },
+  gcash: { label: 'GCash', color: 'text-blue-600',   icon: <Smartphone className="w-3.5 h-3.5" /> },
+  card:  { label: 'Card',  color: 'text-violet-600', icon: <CreditCard className="w-3.5 h-3.5" /> },
+};
+
 function TransactionsSection() {
   const { orders, updateOrderStatus } = useApp();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   const filtered = orders.filter((o) => {
     const matchStatus = statusFilter === 'all' || o.status === statusFilter;
+    const matchType = typeFilter === 'all' || o.deliveryType === typeFilter;
+    const matchPayment = paymentFilter === 'all' || o.paymentMethod === paymentFilter;
     const matchSearch =
       o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
       o.name.toLowerCase().includes(search.toLowerCase());
-    return matchStatus && matchSearch;
+    return matchStatus && matchType && matchPayment && matchSearch;
   });
 
-  const totalRevenue = orders
-    .filter((o) => o.status !== 'cancelled')
-    .reduce((s, o) => s + o.total, 0);
+  const totalRevenue = orders.filter((o) => o.status !== 'cancelled').reduce((s, o) => s + o.total, 0);
+  const completedRevenue = orders.filter((o) => o.status === 'received').reduce((s, o) => s + o.total, 0);
+  const gcashRevenue = orders.filter((o) => o.paymentMethod === 'gcash' && o.status !== 'cancelled').reduce((s, o) => s + o.total, 0);
+  const cashRevenue = orders.filter((o) => o.paymentMethod === 'cod' && o.status !== 'cancelled').reduce((s, o) => s + o.total, 0);
+
+  const typeBreakdown = ['dine-in', 'takeout', 'delivery', 'pickup'].map((type) => ({
+    type,
+    count: orders.filter((o) => o.deliveryType === type && o.status !== 'cancelled').length,
+    revenue: orders.filter((o) => o.deliveryType === type && o.status !== 'cancelled').reduce((s, o) => s + o.total, 0),
+  }));
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl mb-1">Transaction History</h2>
-        <p className="text-sm text-gray-400">
-          {orders.length} total transactions · ₱{totalRevenue.toLocaleString()} revenue
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="text-xl mb-1">Transaction History</h2>
+          <p className="text-sm text-gray-400">
+            {orders.length} total transactions · ₱{totalRevenue.toLocaleString()} revenue
+          </p>
+        </div>
+      </div>
+
+      {/* Revenue Overview */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Revenue', value: `₱${totalRevenue.toLocaleString()}`, sub: 'excl. cancelled', gradient: 'from-green-50 to-emerald-50', border: 'border-green-200/60' },
+          { label: 'Completed', value: `₱${completedRevenue.toLocaleString()}`, sub: `${orders.filter(o => o.status === 'received').length} orders`, gradient: 'from-blue-50 to-sky-50', border: 'border-blue-200/60' },
+          { label: 'GCash', value: `₱${gcashRevenue.toLocaleString()}`, sub: `${orders.filter(o => o.paymentMethod === 'gcash' && o.status !== 'cancelled').length} txns`, gradient: 'from-indigo-50 to-blue-50', border: 'border-indigo-200/60' },
+          { label: 'Cash', value: `₱${cashRevenue.toLocaleString()}`, sub: `${orders.filter(o => o.paymentMethod === 'cod' && o.status !== 'cancelled').length} txns`, gradient: 'from-amber-50 to-yellow-50', border: 'border-amber-200/60' },
+        ].map((s) => (
+          <div key={s.label} className={`bg-gradient-to-br ${s.gradient} border ${s.border} rounded-3xl p-5 shadow-sm hover:shadow-md transition-all`}>
+            <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">{s.label}</p>
+            <p className="text-2xl text-gray-900 mb-1">{s.value}</p>
+            <p className="text-xs text-gray-500">{s.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Order Type Breakdown */}
+      <div className="bg-white rounded-3xl border border-gray-200/50 shadow-lg p-6">
+        <p className="text-sm text-gray-700 mb-4">Breakdown by Order Type</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {typeBreakdown.map(({ type, count, revenue }) => {
+            const cfg = ORDER_TYPE_CFG[type];
+            return (
+              <div key={type} className={`${cfg.bg} rounded-2xl p-4`}>
+                <p className={`text-xs ${cfg.text} uppercase tracking-wider mb-2`}>{cfg.label}</p>
+                <p className="text-2xl text-gray-900">{count}</p>
+                <p className="text-xs text-gray-500 mt-1">₱{revenue.toLocaleString()}</p>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex gap-3 flex-wrap items-center">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by order # or customer…"
+            placeholder="Search by name or order #…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-black transition-colors"
           />
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-black transition-colors"
-        >
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-black transition-colors">
           <option value="all">All Statuses</option>
           <option value="pending">Pending</option>
-          <option value="ongoing">On Delivery</option>
+          <option value="ongoing">In Progress</option>
           <option value="received">Completed</option>
           <option value="cancelled">Cancelled</option>
         </select>
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
+          className="px-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-black transition-colors">
+          <option value="all">All Types</option>
+          <option value="dine-in">Dine In</option>
+          <option value="takeout">Takeout</option>
+          <option value="delivery">Delivery</option>
+          <option value="pickup">Pick Up</option>
+        </select>
+        <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)}
+          className="px-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-black transition-colors">
+          <option value="all">All Payments</option>
+          <option value="cod">Cash</option>
+          <option value="gcash">GCash</option>
+          <option value="card">Card</option>
+        </select>
+        <span className="text-xs text-gray-400">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-3xl border border-gray-200/50 shadow-lg overflow-hidden">
+      {/* Transaction Cards */}
+      <div className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="py-16 text-center text-gray-300">
+          <div className="bg-white rounded-3xl border border-gray-200/50 shadow-lg py-16 text-center text-gray-300">
             <Receipt className="w-10 h-10 mx-auto mb-3 opacity-50" />
             <p>No transactions found</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr className="text-xs text-gray-400 border-b border-gray-100">
-                  <th className="text-left py-3 px-4 font-normal">Order</th>
-                  <th className="text-left py-3 px-4 font-normal hidden md:table-cell">Customer</th>
-                  <th className="text-left py-3 px-4 font-normal hidden lg:table-cell">Date</th>
-                  <th className="text-left py-3 px-4 font-normal hidden sm:table-cell">Items</th>
-                  <th className="text-right py-3 px-4 font-normal">Total</th>
-                  <th className="text-right py-3 px-4 font-normal">Status</th>
-                  <th className="py-3 px-4"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filtered.map((o) => (
-                  <React.Fragment key={o.orderNumber}>
-                    <tr
-                      className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-                      onClick={() => setExpandedOrder(expandedOrder === o.orderNumber ? null : o.orderNumber)}
-                    >
-                      <td className="py-3 px-4 text-xs text-gray-500 font-mono">{o.orderNumber}</td>
-                      <td className="py-3 px-4 hidden md:table-cell">{o.name}</td>
-                      <td className="py-3 px-4 text-gray-400 text-xs hidden lg:table-cell">{o.date}</td>
-                      <td className="py-3 px-4 text-gray-500 hidden sm:table-cell">
-                        {o.items.length} item{o.items.length !== 1 ? 's' : ''}
-                      </td>
-                      <td className="py-3 px-4 text-right">₱{o.total}</td>
-                      <td className="py-3 px-4 text-right">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_CONFIG[o.status].badge}`}>
-                          {STATUS_CONFIG[o.status].label}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-gray-400">
-                        <ChevronDown className={`w-4 h-4 transition-transform ${expandedOrder === o.orderNumber ? 'rotate-180' : ''}`} />
-                      </td>
-                    </tr>
-                    {expandedOrder === o.orderNumber && (
-                      <tr>
-                        <td colSpan={7} className="bg-gray-50/50 px-4 pb-4">
-                          <div className="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                              <p className="text-xs text-gray-400 mb-2">Items Ordered</p>
-                              {o.items.map((item) => (
-                                <div key={item.id} className="flex justify-between text-sm">
-                                  <span>{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
-                                  <span>₱{item.price * item.quantity}</span>
-                                </div>
-                              ))}
-                              <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between text-sm">
-                                <span>Total</span><span>₱{o.total}</span>
+          filtered.map((o) => {
+            const statusCfg = STATUS_CONFIG[o.status];
+            const typeCfg = ORDER_TYPE_CFG[o.deliveryType] ?? { label: o.deliveryType, bg: 'bg-gray-50', text: 'text-gray-600' };
+            const paymentCfg = PAYMENT_CFG[o.paymentMethod] ?? { label: o.paymentMethod, color: 'text-gray-600', icon: null };
+            const isExpanded = expandedOrder === o.orderNumber;
+
+            return (
+              <div key={o.orderNumber} className={`bg-white rounded-3xl border shadow-md hover:shadow-lg transition-all overflow-hidden ${
+                o.status === 'pending' ? 'border-amber-200/60' :
+                o.status === 'ongoing' ? 'border-blue-200/60' :
+                o.status === 'received' ? 'border-green-200/40' : 'border-gray-200/50'
+              }`}>
+                <div
+                  className="p-4 cursor-pointer hover:bg-gray-50/40 transition-colors"
+                  onClick={() => setExpandedOrder(isExpanded ? null : o.orderNumber)}
+                >
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${statusCfg.dot}`} />
+                    <div className="flex-1 min-w-[120px]">
+                      <p className="text-sm text-gray-900">{o.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{o.date}</p>
+                    </div>
+                    <span className={`text-xs px-2.5 py-1 rounded-full hidden sm:inline-flex ${typeCfg.bg} ${typeCfg.text}`}>
+                      {typeCfg.label}
+                    </span>
+                    <div className={`items-center gap-1 text-xs ${paymentCfg.color} hidden sm:flex`}>
+                      {paymentCfg.icon}{paymentCfg.label}
+                    </div>
+                    <span className="text-xs text-gray-400 hidden md:block">{o.items.length} item{o.items.length !== 1 ? 's' : ''}</span>
+                    <span className="text-sm text-gray-900">₱{o.total}</span>
+                    <span className={`text-xs px-2.5 py-1 rounded-full ${statusCfg.badge}`}>{statusCfg.label}</span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="border-t border-gray-100 bg-gray-50/40 p-5 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Items Ordered</p>
+                        <div className="space-y-2">
+                          {o.items.map((item) => (
+                            <div key={item.id} className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                                {item.image
+                                  ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                  : <Package className="w-4 h-4 text-gray-400 m-auto" />}
                               </div>
+                              <span className="flex-1 text-sm">{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
+                              <span className="text-sm">₱{item.price * item.quantity}</span>
                             </div>
-                            <div className="space-y-2 text-sm">
-                              <p className="text-xs text-gray-400 mb-2">Order Details</p>
-                              <div className="flex justify-between"><span className="text-gray-400">Payment</span><span>{o.paymentMethod === 'cod' ? 'Cash on Delivery' : o.paymentMethod === 'gcash' ? 'GCash' : 'Card'}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-400">Type</span><span className="capitalize">{o.deliveryType === 'pickup' ? 'Pick Up' : 'Delivery'}</span></div>
-                              {o.address && <div className="flex justify-between gap-4"><span className="text-gray-400 flex-shrink-0">Address</span><span className="text-right">{o.address}{o.city ? `, ${o.city}` : ''}</span></div>}
-                              {(o.status === 'pending' || o.status === 'ongoing') && (
-                                <div className="flex gap-2 pt-2">
-                                  {o.status === 'pending' && (
-                                    <button onClick={() => updateOrderStatus(o.orderNumber, 'cancelled')}
-                                      className="px-4 py-2 text-xs border border-red-200 text-red-600 rounded-xl hover:bg-red-50 hover:shadow-md transition-all">
-                                      Cancel
-                                    </button>
-                                  )}
-                                  <button onClick={() => updateOrderStatus(o.orderNumber, o.status === 'pending' ? 'ongoing' : 'received')}
-                                    className="px-4 py-2 text-xs bg-gradient-to-br from-gray-900 to-black text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all">
-                                    {o.status === 'pending' ? 'Mark On Delivery' : 'Mark Completed'}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                          ))}
+                          <div className="border-t border-gray-200 pt-2 flex justify-between text-sm">
+                            <span className="text-gray-500">Total</span><span>₱{o.total}</span>
                           </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Order Details</p>
+                        <div className="space-y-2.5 text-sm bg-white rounded-2xl p-4 border border-gray-100">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400">Order Type</span>
+                            <span className={`text-xs px-2.5 py-1 rounded-full ${typeCfg.bg} ${typeCfg.text}`}>{typeCfg.label}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400">Payment</span>
+                            <div className={`flex items-center gap-1.5 ${paymentCfg.color}`}>{paymentCfg.icon}<span>{paymentCfg.label}</span></div>
+                          </div>
+                          {o.address && (
+                            <div className="flex justify-between gap-4">
+                              <span className="text-gray-400 flex-shrink-0">Address</span>
+                              <span className="text-right text-gray-700">{o.address}{o.city ? `, ${o.city}` : ''}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Subtotal</span><span>₱{o.subtotal}</span>
+                          </div>
+                          {o.deliveryFee > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Delivery Fee</span><span>₱{o.deliveryFee}</span>
+                            </div>
+                          )}
+                        </div>
+                        {(o.status === 'pending' || o.status === 'ongoing') && (
+                          <div className="flex gap-2 mt-3">
+                            {o.status === 'pending' && (
+                              <button onClick={() => updateOrderStatus(o.orderNumber, 'cancelled')}
+                                className="px-4 py-2.5 text-xs border border-red-200 text-red-600 rounded-2xl hover:bg-red-50 hover:shadow-md transition-all">
+                                Cancel
+                              </button>
+                            )}
+                            <button onClick={() => updateOrderStatus(o.orderNumber, o.status === 'pending' ? 'ongoing' : 'received')}
+                              className="flex-1 px-4 py-2.5 text-xs bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl hover:shadow-lg hover:scale-105 transition-all">
+                              {o.status === 'pending' ? 'Mark In Progress' : 'Mark Completed'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
 
-      {/* Summary Footer */}
+      {/* Status Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {(['pending', 'ongoing', 'received', 'cancelled'] as SavedOrder['status'][]).map((s) => {
           const count = orders.filter((o) => o.status === s).length;
@@ -673,7 +769,7 @@ function TransactionsSection() {
               <span className={`text-xs px-2.5 py-1 rounded-full ${STATUS_CONFIG[s].badge}`}>
                 {STATUS_CONFIG[s].label}
               </span>
-              <p className="text-2xl mt-3">{count}</p>
+              <p className="text-2xl mt-3 text-gray-900">{count}</p>
               <p className="text-xs text-gray-500 mt-1">₱{rev.toLocaleString()}</p>
             </div>
           );
@@ -892,7 +988,7 @@ function SlideEditor({ slide, index, canDelete, onUpdate, onDelete }: {
   );
 }
 
-// ─── Main Admin Page ──────────────────────────────────────────────────────────
+// ─── Main Admin Page ──────────────────��───────────────────────────────────────
 
 export function AdminPage() {
   const navigate = useNavigate();

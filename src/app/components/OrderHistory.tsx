@@ -8,7 +8,7 @@ export interface SavedOrder {
   subtotal: number;
   deliveryFee: number;
   total: number;
-  deliveryType: 'delivery' | 'pickup';
+  deliveryType: 'delivery' | 'pickup' | 'dine-in' | 'takeout';
   paymentMethod: 'cod' | 'gcash' | 'card';
   name: string;
   address?: string;

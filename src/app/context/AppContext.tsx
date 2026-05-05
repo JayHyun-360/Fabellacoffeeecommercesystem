@@ -62,7 +62,7 @@ const SAMPLE_ORDERS: SavedOrder[] = [
     orderNumber: 'FC-773209-118',
     date: 'May 3, 2026, 11:42 AM',
     items: [{ id: 2, name: 'Cappuccino', price: 120, quantity: 1 }, { id: 5, name: 'Avocado Toast', price: 185, quantity: 1 }],
-    subtotal: 305, deliveryFee: 0, total: 305, deliveryType: 'pickup', paymentMethod: 'cod',
+    subtotal: 305, deliveryFee: 0, total: 305, deliveryType: 'dine-in', paymentMethod: 'cod',
     name: 'Jose Reyes', status: 'received',
   },
   {
@@ -76,15 +76,29 @@ const SAMPLE_ORDERS: SavedOrder[] = [
     orderNumber: 'FC-550371-290',
     date: 'May 4, 2026, 07:05 AM',
     items: [{ id: 3, name: 'Flat White', price: 135, quantity: 1 }, { id: 10, name: 'Blueberry Muffin', price: 55, quantity: 2 }],
-    subtotal: 245, deliveryFee: 49, total: 294, deliveryType: 'delivery', paymentMethod: 'cod',
-    name: 'Ramon Villanueva', address: '22 Borja St', city: 'Bislig', status: 'received',
+    subtotal: 245, deliveryFee: 0, total: 245, deliveryType: 'takeout', paymentMethod: 'gcash',
+    name: 'Ramon Villanueva', status: 'received',
   },
   {
     orderNumber: 'FC-449162-033',
     date: 'May 4, 2026, 08:30 AM',
     items: [{ id: 4, name: 'Cold Brew', price: 145, quantity: 2 }, { id: 8, name: 'Grilled Sandwich', price: 175, quantity: 1 }],
-    subtotal: 465, deliveryFee: 0, total: 465, deliveryType: 'pickup', paymentMethod: 'gcash',
+    subtotal: 465, deliveryFee: 0, total: 465, deliveryType: 'dine-in', paymentMethod: 'cod',
     name: 'Liza Mercado', status: 'ongoing',
+  },
+  {
+    orderNumber: 'FC-338053-712',
+    date: 'May 5, 2026, 08:10 AM',
+    items: [{ id: 2, name: 'Cappuccino', price: 120, quantity: 2 }, { id: 12, name: 'Almond Scone', price: 70, quantity: 2 }],
+    subtotal: 380, deliveryFee: 0, total: 380, deliveryType: 'dine-in', paymentMethod: 'gcash',
+    name: 'Carlo Bautista', status: 'pending',
+  },
+  {
+    orderNumber: 'FC-227944-889',
+    date: 'May 5, 2026, 09:05 AM',
+    items: [{ id: 1, name: 'Espresso', price: 85, quantity: 1 }, { id: 9, name: 'Croissant', price: 65, quantity: 1 }],
+    subtotal: 150, deliveryFee: 0, total: 150, deliveryType: 'takeout', paymentMethod: 'cod',
+    name: 'Sofia Ramos', status: 'pending',
   },
 ];
 
