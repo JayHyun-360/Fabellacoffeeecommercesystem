@@ -189,23 +189,23 @@ function DashboardSection() {
   const chartData = useMemo(() => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const today = new Date();
-    const mockBase = [2840, 3190, 1950, 3450, 2680, 3820, 2290];
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(today);
       d.setDate(d.getDate() - (6 - i));
       const isToday = i === 6;
-      const dayOrders = isToday
+      // Only real orders — no mock data
+      const dayRevenue = isToday
         ? orders.filter((o) => o.status !== 'cancelled').reduce((s, o) => s + o.total, 0)
         : 0;
       return {
         day: days[d.getDay()],
-        revenue: isToday ? mockBase[6] + dayOrders : mockBase[i],
+        revenue: dayRevenue,
         isToday,
       };
     });
   }, [orders]);
 
-  const totalRevenue = chartData.reduce((s, d) => s + d.revenue, 0);
+  const totalRevenue = orders.filter((o) => o.status !== 'cancelled').reduce((s, o) => s + o.total, 0);
   const totalOrders = orders.length;
   const completedOrders = orders.filter((o) => o.status === 'received').length;
   const avgOrder = completedOrders > 0
@@ -236,7 +236,7 @@ function DashboardSection() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {[
-          { label: 'Weekly Revenue', value: `₱${totalRevenue.toLocaleString()}`, icon: <TrendingUp className="w-5 h-5" />, sub: 'Last 7 days', gradient: 'from-green-50 to-emerald-50' },
+          { label: 'Total Revenue', value: `₱${totalRevenue.toLocaleString()}`, icon: <TrendingUp className="w-5 h-5" />, sub: 'All active orders', gradient: 'from-green-50 to-emerald-50' },
           { label: 'Total Orders', value: totalOrders, icon: <ShoppingBag className="w-5 h-5" />, sub: 'All time', gradient: 'from-blue-50 to-sky-50' },
           { label: 'Avg Order Value', value: `₱${avgOrder}`, icon: <BarChart3 className="w-5 h-5" />, sub: 'Per completed order', gradient: 'from-purple-50 to-violet-50' },
           { label: 'Menu Items', value: products.filter((p) => p.available).length, icon: <Coffee className="w-5 h-5" />, sub: `${products.filter((p) => !p.available).length} unavailable`, gradient: 'from-amber-50 to-orange-50' },
@@ -260,8 +260,8 @@ function DashboardSection() {
         <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-gray-200/50 shadow-lg">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <p className="text-gray-800">Revenue — Last 7 Days</p>
-              <p className="text-sm text-gray-400">₱{totalRevenue.toLocaleString()} total</p>
+              <p className="text-gray-800">Revenue Overview</p>
+              <p className="text-sm text-gray-400">₱{totalRevenue.toLocaleString()} session total</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={180}>
@@ -275,12 +275,12 @@ function DashboardSection() {
               />
               <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
                 {chartData.map((entry, i) => (
-                  <Cell key={i} fill={entry.isToday ? '#000' : '#e5e7eb'} />
+                  <Cell key={`bar-cell-${entry.day}-${i}`} fill={entry.isToday ? '#000' : '#e5e7eb'} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <p className="text-xs text-gray-400 text-center mt-2">Today's bar includes live session orders</p>
+          <p className="text-xs text-gray-400 text-center mt-2">Revenue reflects active session orders</p>
         </div>
 
         {/* Top Items */}
@@ -1003,15 +1003,18 @@ export function AdminPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex">
+    <div className="h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex overflow-hidden">
       {/* Sidebar Overlay (mobile) */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-72 bg-white/80 backdrop-blur-xl border-r border-gray-100 z-40 flex flex-col transition-transform duration-300 shadow-xl
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:z-auto`}>
+      {/* Sidebar — fixed on mobile, permanent on desktop */}
+      <aside className={`
+        fixed inset-y-0 left-0 w-72 bg-white border-r border-gray-100 z-40 flex flex-col transition-transform duration-300 shadow-2xl
+        lg:relative lg:translate-x-0 lg:shadow-none lg:z-auto lg:flex-shrink-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
         {/* Logo */}
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
@@ -1058,9 +1061,9 @@ export function AdminPage() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar (mobile) */}
-        <header className="lg:hidden bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-20 px-4 py-4 flex items-center justify-between shadow-sm">
+        <header className="lg:hidden bg-white/80 backdrop-blur-xl border-b border-gray-100 flex-shrink-0 z-20 px-4 py-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="p-2.5 rounded-2xl hover:bg-gray-100 transition-all">
               <BarChart3 className="w-5 h-5" />
@@ -1077,15 +1080,17 @@ export function AdminPage() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-8 max-w-7xl w-full mx-auto">
-          {section === 'dashboard' && <DashboardSection />}
-          {section === 'menu' && <MenuManagementSection />}
-          {section === 'transactions' && <TransactionsSection />}
-          {section === 'settings' && <StoreSettingsSection />}
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+          <div className="max-w-7xl w-full mx-auto">
+            {section === 'dashboard' && <DashboardSection />}
+            {section === 'menu' && <MenuManagementSection />}
+            {section === 'transactions' && <TransactionsSection />}
+            {section === 'settings' && <StoreSettingsSection />}
+          </div>
         </main>
 
         {/* Bottom nav (mobile) */}
-        <nav className="lg:hidden bg-white border-t border-gray-100 flex">
+        <nav className="lg:hidden bg-white border-t border-gray-100 flex flex-shrink-0">
           {navItems.map((item) => (
             <button
               key={item.key}

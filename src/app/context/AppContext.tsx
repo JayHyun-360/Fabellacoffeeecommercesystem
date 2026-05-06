@@ -137,7 +137,7 @@ const AppContext = createContext<AppContextType>(null!);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [orders, setOrders] = useState<SavedOrder[]>(SAMPLE_ORDERS);
+  const [orders, setOrders] = useState<SavedOrder[]>([]);
   const [settings, setSettings] = useState<StoreSettings>(INITIAL_SETTINGS);
 
   const addOrder = (order: SavedOrder) => setOrders((prev) => [order, ...prev]);

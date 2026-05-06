@@ -1,4 +1,4 @@
-import { X, Package, Truck, Store, ChevronDown, ChevronUp, Clock, Receipt, XCircle, CheckCircle, ArrowRight } from 'lucide-react';
+import { X, Package, Truck, Store, ChevronDown, ChevronUp, Clock, Receipt, XCircle, UtensilsCrossed, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 
 export interface SavedOrder {
@@ -24,16 +24,30 @@ interface OrderHistoryProps {
 }
 
 const STATUS_CONFIG: Record<SavedOrder['status'], { label: string; color: string; bg: string }> = {
-  pending: { label: 'Pending', color: 'text-amber-700', bg: 'bg-amber-50' },
-  cancelled: { label: 'Cancelled', color: 'text-red-700', bg: 'bg-red-50' },
-  ongoing: { label: 'On Going (On Delivery)', color: 'text-blue-700', bg: 'bg-blue-50' },
-  received: { label: 'Received (Completed)', color: 'text-green-700', bg: 'bg-green-50' },
+  pending:   { label: 'Pending',     color: 'text-amber-700', bg: 'bg-amber-50'  },
+  cancelled: { label: 'Cancelled',   color: 'text-red-700',   bg: 'bg-red-50'    },
+  ongoing:   { label: 'In Progress', color: 'text-blue-700',  bg: 'bg-blue-50'   },
+  received:  { label: 'Completed',   color: 'text-green-700', bg: 'bg-green-50'  },
 };
 
 const PAYMENT_LABELS: Record<string, string> = {
-  cod: 'Cash on Delivery',
+  cod:   'Cash',
   gcash: 'GCash',
-  card: 'Credit / Debit Card',
+  card:  'Credit / Debit Card',
+};
+
+const ORDER_TYPE_ICONS: Record<SavedOrder['deliveryType'], React.ReactNode> = {
+  'delivery': <Truck className="w-5 h-5 text-gray-600" />,
+  'pickup':   <Store className="w-5 h-5 text-gray-600" />,
+  'dine-in':  <UtensilsCrossed className="w-5 h-5 text-gray-600" />,
+  'takeout':  <ShoppingBag className="w-5 h-5 text-gray-600" />,
+};
+
+const ORDER_TYPE_LABELS: Record<SavedOrder['deliveryType'], string> = {
+  'delivery': 'Delivery',
+  'pickup':   'Pick Up',
+  'dine-in':  'Dine In',
+  'takeout':  'Takeout',
 };
 
 function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatus: (orderNumber: string, newStatus: SavedOrder['status']) => void }) {
@@ -46,14 +60,6 @@ function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatu
     }
   };
 
-  const handleProgressStatus = () => {
-    if (order.status === 'pending') {
-      onUpdateStatus(order.orderNumber, 'ongoing');
-    } else if (order.status === 'ongoing') {
-      onUpdateStatus(order.orderNumber, 'received');
-    }
-  };
-
   return (
     <div className="border border-gray-100 rounded-2xl overflow-hidden">
       {/* Order Header */}
@@ -62,9 +68,7 @@ function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatu
         onClick={() => setExpanded(!expanded)}
       >
         <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-          {order.deliveryType === 'delivery'
-            ? <Truck className="w-5 h-5 text-gray-600" />
-            : <Store className="w-5 h-5 text-gray-600" />}
+          {ORDER_TYPE_ICONS[order.deliveryType]}
         </div>
 
         <div className="flex-1 min-w-0">
@@ -133,46 +137,34 @@ function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatu
               <p className="text-gray-700">{PAYMENT_LABELS[order.paymentMethod]}</p>
             </div>
             <div className="bg-white rounded-xl p-3">
-              <p className="text-gray-400 mb-0.5">
-                {order.deliveryType === 'delivery' ? 'Delivered to' : 'Pick Up'}
-              </p>
-              <p className="text-gray-700 truncate">
-                {order.deliveryType === 'pickup'
-                  ? 'Ramz Square Branch'
-                  : order.address
-                  ? `${order.address}${order.city ? `, ${order.city}` : ''}`
-                  : '—'}
-              </p>
+              <p className="text-gray-400 mb-0.5">Order Type</p>
+              <p className="text-gray-700">{ORDER_TYPE_LABELS[order.deliveryType]}</p>
             </div>
+            {order.deliveryType === 'delivery' && order.address && (
+              <div className="bg-white rounded-xl p-3 col-span-2">
+                <p className="text-gray-400 mb-0.5">Deliver to</p>
+                <p className="text-gray-700 truncate">
+                  {order.address}{order.city ? `, ${order.city}` : ''}
+                </p>
+              </div>
+            )}
+            {order.deliveryType === 'pickup' && (
+              <div className="bg-white rounded-xl p-3 col-span-2">
+                <p className="text-gray-400 mb-0.5">Pick Up at</p>
+                <p className="text-gray-700">Ramz Square Branch</p>
+              </div>
+            )}
           </div>
 
-          {/* Status Actions */}
-          {(order.status === 'pending' || order.status === 'ongoing') && (
+          {/* Customer can only cancel their own pending order */}
+          {order.status === 'pending' && (
             <div className="flex gap-2 mt-2">
-              {order.status === 'pending' && (
-                <button
-                  onClick={handleCancel}
-                  className="flex-1 py-2.5 px-4 bg-white border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Cancel Order
-                </button>
-              )}
               <button
-                onClick={handleProgressStatus}
-                className="flex-1 py-2.5 px-4 bg-black text-white rounded-xl hover:bg-black/80 transition-colors flex items-center justify-center gap-2 text-sm"
+                onClick={handleCancel}
+                className="w-full py-2.5 px-4 bg-white border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2 text-sm"
               >
-                {order.status === 'pending' ? (
-                  <>
-                    <ArrowRight className="w-4 h-4" />
-                    Mark as On Going
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    Mark as Received
-                  </>
-                )}
+                <XCircle className="w-4 h-4" />
+                Cancel Order
               </button>
             </div>
           )}

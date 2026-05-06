@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, ChevronRight, ChevronLeft, MapPin, Phone, Mail, User, Check, Package, Truck, CreditCard, Smartphone, Banknote, Store } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, MapPin, Phone, Mail, User, Check, Package, Truck, CreditCard, Smartphone, Banknote, Store, UtensilsCrossed, ShoppingBag } from 'lucide-react';
 import type { SavedOrder } from './OrderHistory';
 
 interface CartItem {
@@ -17,7 +17,7 @@ interface CheckoutProps {
   onOrderComplete: (order: SavedOrder) => void;
 }
 
-type DeliveryType = 'delivery' | 'pickup';
+type DeliveryType = 'delivery' | 'pickup' | 'dine-in' | 'takeout';
 type PaymentMethod = 'cod' | 'gcash' | 'card';
 
 interface OrderDetails {
@@ -32,7 +32,21 @@ interface OrderDetails {
 }
 
 const DELIVERY_FEE = 49;
-const STEPS = ['Review Order', 'Delivery Details', 'Payment', 'Confirmation'];
+const STEPS = ['Review Order', 'Order Details', 'Payment', 'Confirmation'];
+
+const DELIVERY_OPTIONS: { value: DeliveryType; label: string; icon: React.ReactNode; desc: string }[] = [
+  { value: 'dine-in', label: 'Dine In', icon: <UtensilsCrossed className="w-4 h-4" />, desc: 'Eat at our store' },
+  { value: 'takeout', label: 'Takeout', icon: <ShoppingBag className="w-4 h-4" />, desc: 'Order & take away' },
+  { value: 'delivery', label: 'Delivery', icon: <Truck className="w-4 h-4" />, desc: 'Delivered to your door' },
+  { value: 'pickup', label: 'Pick Up', icon: <Store className="w-4 h-4" />, desc: 'Ready at the counter' },
+];
+
+const DELIVERY_TYPE_LABELS: Record<DeliveryType, string> = {
+  'dine-in': 'Dine In',
+  'takeout': 'Takeout',
+  'delivery': 'Delivery',
+  'pickup': 'Store Pick Up',
+};
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
@@ -112,7 +126,11 @@ function OrderReview({ items, deliveryType, onNext, onBack }: {
         </div>
         <div className="flex justify-between text-sm text-gray-600">
           <span>Delivery Fee</span>
-          <span>{deliveryType === 'pickup' ? <span className="text-green-600">Free</span> : `₱${DELIVERY_FEE}`}</span>
+          <span>
+            {deliveryType !== 'delivery'
+              ? <span className="text-green-600">Free</span>
+              : `₱${DELIVERY_FEE}`}
+          </span>
         </div>
         <div className="flex justify-between text-lg border-t border-gray-100 pt-3">
           <span>Total</span>
@@ -146,42 +164,46 @@ function DeliveryDetails({ details, onChange, onNext, onBack }: {
   onNext: () => void;
   onBack: () => void;
 }) {
+  const needsAddress = details.deliveryType === 'delivery';
   const isValid =
     details.name.trim() &&
     details.phone.trim() &&
     details.email.trim() &&
-    (details.deliveryType === 'pickup' || details.address.trim());
+    (!needsAddress || details.address.trim());
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto space-y-5">
-        {/* Delivery Type Toggle */}
-        <div className="flex gap-3">
-          <button
-            onClick={() => onChange('deliveryType', 'delivery')}
-            className={`flex-1 py-3 px-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-2 ${
-              details.deliveryType === 'delivery'
-                ? 'border-black bg-black text-white'
-                : 'border-gray-200 hover:border-gray-400'
-            }`}
-          >
-            <Truck className="w-4 h-4" />
-            <span className="text-sm">Delivery</span>
-          </button>
-          <button
-            onClick={() => onChange('deliveryType', 'pickup')}
-            className={`flex-1 py-3 px-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-2 ${
-              details.deliveryType === 'pickup'
-                ? 'border-black bg-black text-white'
-                : 'border-gray-200 hover:border-gray-400'
-            }`}
-          >
-            <Store className="w-4 h-4" />
-            <span className="text-sm">Pick Up</span>
-          </button>
+        {/* Order Type — 2×2 grid */}
+        <div>
+          <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">How would you like to order?</p>
+          <div className="grid grid-cols-2 gap-3">
+            {DELIVERY_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => onChange('deliveryType', option.value)}
+                className={`flex items-center gap-2.5 p-3.5 rounded-2xl border-2 transition-all text-left ${
+                  details.deliveryType === option.value
+                    ? 'border-black bg-black text-white'
+                    : 'border-gray-200 hover:border-gray-400 text-gray-700'
+                }`}
+              >
+                <span className={details.deliveryType === option.value ? 'text-white' : 'text-gray-500'}>
+                  {option.icon}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm leading-none">{option.label}</p>
+                  <p className={`text-xs mt-0.5 ${details.deliveryType === option.value ? 'text-white/70' : 'text-gray-400'}`}>
+                    {option.desc}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {details.deliveryType === 'pickup' && (
+        {/* Store info for dine-in / takeout / pickup */}
+        {(details.deliveryType === 'dine-in' || details.deliveryType === 'takeout' || details.deliveryType === 'pickup') && (
           <div className="bg-gray-50 rounded-2xl p-4 flex gap-3">
             <MapPin className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
             <div>
@@ -291,25 +313,17 @@ function PaymentStep({ details, items, onChange, onNext, onBack }: {
   const deliveryFee = details.deliveryType === 'delivery' ? DELIVERY_FEE : 0;
   const total = subtotal + deliveryFee;
 
+  const codDesc =
+    details.deliveryType === 'delivery'
+      ? 'Pay with cash when your order arrives'
+      : details.deliveryType === 'pickup'
+      ? 'Pay with cash when you pick up'
+      : 'Pay with cash at the counter';
+
   const paymentOptions: { value: PaymentMethod; label: string; icon: React.ReactNode; desc: string }[] = [
-    {
-      value: 'cod',
-      label: 'Cash on Delivery',
-      icon: <Banknote className="w-5 h-5" />,
-      desc: 'Pay with cash when your order arrives',
-    },
-    {
-      value: 'gcash',
-      label: 'GCash',
-      icon: <Smartphone className="w-5 h-5" />,
-      desc: 'Send payment via GCash mobile wallet',
-    },
-    {
-      value: 'card',
-      label: 'Credit / Debit Card',
-      icon: <CreditCard className="w-5 h-5" />,
-      desc: 'Visa, Mastercard, and more',
-    },
+    { value: 'cod', label: 'Cash', icon: <Banknote className="w-5 h-5" />, desc: codDesc },
+    { value: 'gcash', label: 'GCash', icon: <Smartphone className="w-5 h-5" />, desc: 'Send payment via GCash mobile wallet' },
+    { value: 'card', label: 'Credit / Debit Card', icon: <CreditCard className="w-5 h-5" />, desc: 'Visa, Mastercard, and more' },
   ];
 
   return (
@@ -391,7 +405,11 @@ function PaymentStep({ details, items, onChange, onNext, onBack }: {
           </div>
           <div className="flex justify-between text-sm text-gray-600">
             <span>Delivery</span>
-            <span>{details.deliveryType === 'pickup' ? <span className="text-green-600">Free</span> : `₱${DELIVERY_FEE}`}</span>
+            <span>
+              {details.deliveryType !== 'delivery'
+                ? <span className="text-green-600">Free</span>
+                : `₱${DELIVERY_FEE}`}
+            </span>
           </div>
           <div className="flex justify-between pt-2 border-t border-gray-200">
             <span>Total</span>
@@ -431,12 +449,16 @@ function OrderConfirmation({ details, items, orderNumber, onClose }: {
   const total = subtotal + deliveryFee;
 
   const paymentLabels: Record<PaymentMethod, string> = {
-    cod: 'Cash on Delivery',
+    cod: 'Cash',
     gcash: 'GCash',
     card: 'Credit / Debit Card',
   };
 
-  const estTime = details.deliveryType === 'delivery' ? '30–50 minutes' : '15–20 minutes';
+  const estTime =
+    details.deliveryType === 'delivery' ? '30–50 minutes' :
+    details.deliveryType === 'dine-in' ? '5–15 minutes' :
+    details.deliveryType === 'takeout' ? '10–15 minutes' :
+    '15–20 minutes';
 
   return (
     <div className="flex flex-col h-full items-center">
@@ -459,8 +481,8 @@ function OrderConfirmation({ details, items, orderNumber, onClose }: {
         {/* Summary */}
         <div className="bg-gray-50 rounded-2xl p-5 mb-5 space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Delivery Type</span>
-            <span className="capitalize">{details.deliveryType === 'pickup' ? 'Store Pick Up' : 'Delivery'}</span>
+            <span className="text-gray-500">Order Type</span>
+            <span>{DELIVERY_TYPE_LABELS[details.deliveryType]}</span>
           </div>
           {details.deliveryType === 'delivery' && details.address && (
             <div className="flex justify-between text-sm">
@@ -477,7 +499,7 @@ function OrderConfirmation({ details, items, orderNumber, onClose }: {
             <span>{estTime}</span>
           </div>
           <div className="flex justify-between text-sm border-t border-gray-200 pt-3">
-            <span className="text-gray-500">Total Paid</span>
+            <span className="text-gray-500">Total</span>
             <span>₱{total}</span>
           </div>
         </div>
@@ -581,7 +603,7 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
 
   if (!isOpen) return null;
 
-  const stepTitles = ['Review Order', 'Delivery Details', 'Payment', 'Order Confirmed'];
+  const stepTitles = ['Review Order', 'Order Details', 'Payment', 'Order Confirmed'];
 
   return (
     <>
