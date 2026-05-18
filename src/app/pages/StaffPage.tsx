@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Clock, Truck, Store, Package, MapPin,
   CheckCircle, XCircle, Banknote, Smartphone, CreditCard,
   RefreshCw, Coffee, ChevronDown, ChevronUp, AlertCircle,
-  UtensilsCrossed, ShoppingBag, QrCode, Wifi, Check, X
+  UtensilsCrossed, ShoppingBag, QrCode, Wifi, Check, X,
+  User, LogOut
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import type { SavedOrder } from '../components/OrderHistory';
 import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
 
@@ -299,12 +301,25 @@ function StaffOrderCard({ order, queueNum }: { order: SavedOrder; queueNum: numb
 export function StaffPage() {
   const router = useRouter();
   const { orders } = useApp();
+  const { user, isAdmin, logout } = useAuth();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 30000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const timeStr = currentTime.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
@@ -349,7 +364,7 @@ export function StaffPage() {
               <div>
                 <p className="text-white text-sm tracking-widest">FABELLA COFFEE</p>
                 <p className="text-gray-400 text-xs flex items-center gap-1">
-                  <Coffee className="w-3 h-3" />Staff Portal
+                  <Coffee className="w-3 h-3" />{isAdmin ? 'Staff Preview' : 'Staff Portal'}
                 </p>
               </div>
             </div>
@@ -359,16 +374,78 @@ export function StaffPage() {
               <span className="text-sm text-gray-200">{dateStr} · {timeStr}</span>
             </div>
 
-            <button
-              onClick={() => router.push('/')}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-full text-sm transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Customer View</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Profile dropdown */}
+              <div className="relative" ref={profileRef}>
+                <button
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className={`w-9 h-9 flex items-center justify-center rounded-full transition-all overflow-hidden border ${
+                    profileOpen ? 'border-white ring-2 ring-white/30' : 'border-white/20 hover:border-white/40'
+                  }`}
+                >
+                  {user?.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-[18px] h-[18px] text-white" />
+                  )}
+                </button>
+
+                {profileOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                    {user && (
+                      <div className="px-4 pt-4 pb-3 border-b border-gray-100">
+                        <div className="flex items-center gap-3">
+                          {user.user_metadata?.avatar_url ? (
+                            <img src={user.user_metadata.avatar_url} alt="" className="w-10 h-10 rounded-full" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                              <User className="w-5 h-5 text-gray-500" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm truncate">{user.user_metadata?.full_name ?? 'Staff'}</p>
+                            <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                          </div>
+                        </div>
+                        <div className="mt-2">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                            {isAdmin ? 'Admin (Preview)' : 'Staff'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {isAdmin && (
+                      <div className="p-2">
+                        <button
+                          onClick={() => { router.push('/admin'); setProfileOpen(false); }}
+                          className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left text-sm"
+                        >
+                          <ArrowLeft className="w-4 h-4 text-gray-400" />Back to Admin Panel
+                        </button>
+                      </div>
+                    )}
+                    <div className="p-2 border-t border-gray-100">
+                      <button
+                        onClick={() => { logout(); setProfileOpen(false); }}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 transition-colors text-red-600 text-sm"
+                      >
+                        <LogOut className="w-4 h-4" />Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Admin preview banner */}
+      {isAdmin && (
+        <div className="bg-blue-600 text-white text-center py-2 px-6 text-sm tracking-wide">
+          Preview Mode — You are viewing the staff portal as admin. Actions are view-only.
+        </div>
+      )}
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* Stats */}
