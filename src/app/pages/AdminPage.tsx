@@ -8,12 +8,14 @@ import {
   TrendingUp, ShoppingBag, Coffee, Package, Plus, Pencil, Trash2,
   Eye, EyeOff, X, Check, Search, Image, ChevronDown,
   BarChart3, Star, AlertCircle,
-  Banknote, Smartphone, CreditCard, Users2, Shield, UserCog
+  Banknote, Smartphone, CreditCard, Users2, Shield, UserCog,
+  User, LogOut
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import { useApp, type Product, type HeroSlide } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import type { SavedOrder } from '../components/OrderHistory';
 import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
 
@@ -1181,6 +1183,7 @@ function SlideEditor({ slide, index, canDelete, onUpdate, onDelete }: {
 
 export function AdminPage() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [section, setSection] = useState<AdminSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -1238,14 +1241,40 @@ export function AdminPage() {
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="p-5 border-t border-gray-100">
+        {/* Preview Store link */}
+        <div className="px-5 pb-2">
           <button
             onClick={() => router.push('/')}
             className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm text-gray-600 hover:bg-gray-50 hover:shadow-sm transition-all"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <Eye className="w-5 h-5" />
             Preview Store
+          </button>
+        </div>
+
+        {/* Profile / Sign Out */}
+        <div className="p-5 border-t border-gray-100">
+          {user && (
+            <div className="flex items-center gap-3 mb-3">
+              {user.user_metadata?.avatar_url ? (
+                <img src={user.user_metadata.avatar_url} alt="" className="w-9 h-9 rounded-full flex-shrink-0" />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-gray-500" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm truncate">{user.user_metadata?.full_name ?? 'Admin'}</p>
+                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-3 px-5 py-3 rounded-2xl text-sm text-red-600 hover:bg-red-50 transition-all"
+          >
+            <LogOut className="w-5 h-5" />
+            Sign Out
           </button>
         </div>
       </aside>
@@ -1263,10 +1292,17 @@ export function AdminPage() {
               <p className="text-xs text-gray-400">{navItems.find((n) => n.key === section)?.label}</p>
             </div>
           </div>
-          <button           onClick={() => router.push('/')}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-br from-gray-900 to-black text-white rounded-full text-sm hover:shadow-lg transition-all">
-                      <ArrowLeft className="w-4 h-4" />Exit
-          </button>
+          <div className="flex items-center gap-2">
+            {user?.user_metadata?.avatar_url ? (
+              <button onClick={() => setSidebarOpen(true)} className="w-8 h-8 rounded-full overflow-hidden">
+                <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+              </button>
+            ) : (
+              <button onClick={() => setSidebarOpen(true)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                <User className="w-4 h-4 text-gray-500" />
+              </button>
+            )}
+          </div>
         </header>
 
         {/* Content */}
