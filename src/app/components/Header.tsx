@@ -95,6 +95,7 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
                 <User className="w-[18px] h-[18px]" />
               ) : (
                 <Users2 className="w-[18px] h-[18px]" />
+              )}
             </button>
           </div>
 
