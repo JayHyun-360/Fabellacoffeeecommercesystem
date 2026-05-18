@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const role: AppRole = getRoleFromSession(session);
   const isAdmin = role === 'admin';
-  const isStaff = role === 'staff' || role === 'admin';
+  const isStaff = role === 'staff';
   const isAnonymous = session?.user?.is_anonymous ?? false;
 
   const loginWithGoogle = useCallback(async () => {
