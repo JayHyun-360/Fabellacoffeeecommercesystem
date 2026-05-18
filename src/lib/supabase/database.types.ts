@@ -105,7 +105,7 @@ export interface Database {
       };
       orders: {
         Row: Order;
-        Insert: Omit<Order, 'id' | 'queue_number' | 'created_at' | 'updated_at'>;
+        Insert: Omit<Order, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<Order, 'id' | 'created_at'>>;
       };
       order_items: {
