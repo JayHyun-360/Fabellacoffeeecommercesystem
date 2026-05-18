@@ -2,6 +2,7 @@
 
 export type AppRole = 'admin' | 'staff' | 'customer';
 export type ProductCategory = 'coffee' | 'food' | 'pastries' | 'beverages';
+export type DisplayType = 'regular' | 'promo' | 'set' | 'featured';
 export type OrderStatus = 'pending' | 'ongoing' | 'completed' | 'cancelled';
 export type OrderType = 'dine-in' | 'takeout' | 'delivery' | 'pickup';
 export type PaymentMethod = 'cod' | 'gcash' | 'card';
@@ -19,14 +20,22 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface SetItem {
+  product_name: string;
+  quantity: number;
+}
+
 export interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
+  promo_price: number | null;
   category: ProductCategory;
+  display_type: DisplayType;
   image: string;
   available: boolean;
+  set_items: SetItem[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -115,6 +124,7 @@ export interface Database {
     Enums: {
       app_role: AppRole;
       product_category: ProductCategory;
+      display_type: DisplayType;
       order_status: OrderStatus;
       order_type: OrderType;
       payment_method: PaymentMethod;

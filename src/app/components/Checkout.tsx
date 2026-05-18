@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import type { SavedOrder } from './OrderHistory';
 
 interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   quantity: number;

@@ -7,7 +7,7 @@ import {
   LayoutDashboard, UtensilsCrossed, Receipt, Settings, ArrowLeft,
   TrendingUp, ShoppingBag, Coffee, Package, Plus, Pencil, Trash2,
   Eye, EyeOff, X, Check, Search, Image, ChevronDown,
-  BarChart3, Star, AlertCircle,
+  BarChart3, Star, AlertCircle, Upload, Tag, Layers, Menu,
   Banknote, Smartphone, CreditCard, Users2, Shield, UserCog,
   User, LogOut
 } from 'lucide-react';
@@ -20,7 +20,8 @@ import type { SavedOrder } from '../components/OrderHistory';
 import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
 
 import { fetchAllProfiles, updateProfileRole } from '../../lib/supabase/auth';
-import type { AppRole, Profile } from '../../lib/supabase/database.types';
+import type { AppRole, Profile, DisplayType, SetItem } from '../../lib/supabase/database.types';
+import { uploadProductImage } from '../../lib/supabase/products';
 
 type AdminSection = 'dashboard' | 'menu' | 'transactions' | 'users' | 'settings';
 
@@ -42,9 +43,16 @@ const STATUS_CONFIG: Record<SavedOrder['status'], { label: string; badge: string
 
 // ─── Product Modal ───────────────────────────────────────────────────────────
 
+const DISPLAY_TYPE_LABELS: Record<DisplayType, { label: string; color: string; icon: React.ReactNode }> = {
+  regular:  { label: 'Regular',  color: 'bg-gray-100 text-gray-700',    icon: <Coffee className="w-3.5 h-3.5" /> },
+  promo:    { label: 'Promo',    color: 'bg-red-100 text-red-700',      icon: <Tag className="w-3.5 h-3.5" /> },
+  set:      { label: 'Set',      color: 'bg-purple-100 text-purple-700', icon: <Layers className="w-3.5 h-3.5" /> },
+  featured: { label: 'Featured', color: 'bg-amber-100 text-amber-700',  icon: <Star className="w-3.5 h-3.5" /> },
+};
+
 interface ProductModalProps {
   product?: Product;
-  onSave: (p: Omit<Product, 'id'> & { id?: number }) => void;
+  onSave: (p: Omit<Product, 'id'> & { id?: string }) => void;
   onClose: () => void;
 }
 
@@ -53,22 +61,70 @@ function ProductModal({ product, onSave, onClose }: ProductModalProps) {
     name: product?.name ?? '',
     description: product?.description ?? '',
     price: product?.price?.toString() ?? '',
+    promo_price: product?.promo_price?.toString() ?? '',
     category: product?.category ?? 'coffee',
+    display_type: (product?.display_type ?? 'regular') as DisplayType,
     image: product?.image ?? '',
     available: product?.available ?? true,
+    set_items: (product?.set_items ?? []) as SetItem[],
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>(product?.image ?? '');
+  const [uploading, setUploading] = useState(false);
+  const [newSetItem, setNewSetItem] = useState({ product_name: '', quantity: '1' });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    const url = URL.createObjectURL(file);
+    setImagePreview(url);
+    setForm({ ...form, image: '' });
+  };
+
+  const addSetItem = () => {
+    if (!newSetItem.product_name.trim()) return;
+    setForm({
+      ...form,
+      set_items: [...form.set_items, { product_name: newSetItem.product_name.trim(), quantity: parseInt(newSetItem.quantity, 10) || 1 }],
+    });
+    setNewSetItem({ product_name: '', quantity: '1' });
+  };
+
+  const removeSetItem = (idx: number) => {
+    setForm({ ...form, set_items: form.set_items.filter((_, i) => i !== idx) });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.price) return;
+
+    let finalImage = form.image.trim();
+    if (imageFile) {
+      try {
+        setUploading(true);
+        finalImage = await uploadProductImage(imageFile);
+      } catch (err) {
+        console.error('Image upload failed:', err);
+        alert('Image upload failed. You can try again or use a URL instead.');
+        setUploading(false);
+        return;
+      } finally {
+        setUploading(false);
+      }
+    }
+
     onSave({
       ...(product ? { id: product.id } : {}),
       name: form.name.trim(),
       description: form.description.trim(),
       price: parseInt(form.price, 10),
+      promo_price: form.display_type === 'promo' || form.display_type === 'featured' ? (form.promo_price ? parseInt(form.promo_price, 10) : null) : null,
       category: form.category as Product['category'],
-      image: form.image.trim(),
+      display_type: form.display_type,
+      image: finalImage,
       available: form.available,
+      set_items: form.display_type === 'set' ? form.set_items : null,
     });
     onClose();
   };
@@ -86,23 +142,34 @@ function ProductModal({ product, onSave, onClose }: ProductModalProps) {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Image Preview */}
-          {form.image && (
+          {(imagePreview || form.image) && (
             <div className="w-full h-40 rounded-2xl overflow-hidden bg-gray-100">
-              <img src={form.image} alt="Preview" className="w-full h-full object-cover" />
+              <img src={imagePreview || form.image} alt="Preview" className="w-full h-full object-cover" />
             </div>
           )}
 
+          {/* Image Upload */}
           <div>
-            <label className="text-xs text-gray-500 mb-1.5 block">Image URL</label>
-            <div className="relative">
-              <Image className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="https://images.unsplash.com/..."
-                value={form.image}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-black transition-colors text-sm"
-              />
+            <label className="text-xs text-gray-500 mb-1.5 block">Product Image</label>
+            <div className="flex gap-2">
+              <label className="flex-1 flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:border-black transition-colors text-sm">
+                <Upload className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-500 truncate">{imageFile ? imageFile.name : 'Upload image...'}</span>
+                <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+              </label>
+            </div>
+            <div className="mt-2">
+              <label className="text-xs text-gray-400 mb-1 block">Or paste image URL</label>
+              <div className="relative">
+                <Image className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="https://images.unsplash.com/..."
+                  value={form.image}
+                  onChange={(e) => { setForm({ ...form, image: e.target.value }); setImageFile(null); setImagePreview(e.target.value); }}
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-black transition-colors text-sm"
+                />
+              </div>
             </div>
           </div>
 
@@ -157,6 +224,84 @@ function ProductModal({ product, onSave, onClose }: ProductModalProps) {
             </div>
           </div>
 
+          {/* Display Type */}
+          <div>
+            <label className="text-xs text-gray-500 mb-1.5 block">Display Type</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {(['regular', 'promo', 'set', 'featured'] as DisplayType[]).map((dt) => {
+                const cfg = DISPLAY_TYPE_LABELS[dt];
+                return (
+                  <button
+                    key={dt}
+                    type="button"
+                    onClick={() => setForm({ ...form, display_type: dt })}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs border transition-all ${
+                      form.display_type === dt ? 'border-black bg-black text-white shadow-md' : `border-gray-200 ${cfg.color} hover:border-gray-400`
+                    }`}
+                  >
+                    {cfg.icon}{cfg.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Promo Price (shown for promo/featured) */}
+          {(form.display_type === 'promo' || form.display_type === 'featured') && (
+            <div>
+              <label className="text-xs text-gray-500 mb-1.5 block">Promo Price (₱)</label>
+              <input
+                type="number"
+                min={1}
+                placeholder="e.g. 65 (discounted price)"
+                value={form.promo_price}
+                onChange={(e) => setForm({ ...form, promo_price: e.target.value })}
+                className="w-full px-4 py-2.5 bg-red-50 border border-red-200 rounded-xl focus:outline-none focus:border-red-400 transition-colors text-sm"
+              />
+            </div>
+          )}
+
+          {/* Set Items (shown for set type) */}
+          {form.display_type === 'set' && (
+            <div>
+              <label className="text-xs text-gray-500 mb-1.5 block">Set Items</label>
+              {form.set_items.length > 0 && (
+                <div className="space-y-1.5 mb-2">
+                  {form.set_items.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-purple-50 rounded-lg text-sm">
+                      <Layers className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
+                      <span className="flex-1">{item.product_name}</span>
+                      <span className="text-purple-600">x{item.quantity}</span>
+                      <button type="button" onClick={() => removeSetItem(idx)} className="text-red-400 hover:text-red-600">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Item name"
+                  value={newSetItem.product_name}
+                  onChange={(e) => setNewSetItem({ ...newSetItem, product_name: e.target.value })}
+                  className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black"
+                />
+                <input
+                  type="number"
+                  min={1}
+                  placeholder="Qty"
+                  value={newSetItem.quantity}
+                  onChange={(e) => setNewSetItem({ ...newSetItem, quantity: e.target.value })}
+                  className="w-16 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-black"
+                />
+                <button type="button" onClick={addSetItem} className="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200 transition-colors">
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
             <div>
               <p className="text-sm">Available for ordering</p>
@@ -176,10 +321,13 @@ function ProductModal({ product, onSave, onClose }: ProductModalProps) {
               className="flex-1 py-3 border border-gray-200 hover:border-black rounded-full text-sm transition-all hover:shadow-md">
               Cancel
             </button>
-            <button type="submit"
-              className="flex-1 py-3 bg-gradient-to-br from-gray-900 to-black text-white hover:shadow-xl hover:scale-105 rounded-full text-sm transition-all flex items-center justify-center gap-2">
-              <Check className="w-4 h-4" />
-              {product ? 'Save Changes' : 'Add Product'}
+            <button type="submit" disabled={uploading}
+              className="flex-1 py-3 bg-gradient-to-br from-gray-900 to-black text-white hover:shadow-xl hover:scale-105 rounded-full text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+              {uploading ? (
+                <><span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />Uploading...</>
+              ) : (
+                <><Check className="w-4 h-4" />{product ? 'Save Changes' : 'Add Product'}</>
+              )}
             </button>
           </div>
         </form>
@@ -368,7 +516,7 @@ function MenuManagementSection() {
   const [modalOpen, setModalOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState<string>('all');
-  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const filtered = products.filter((p) => {
     const matchCat = catFilter === 'all' || p.category === catFilter;
@@ -376,7 +524,7 @@ function MenuManagementSection() {
     return matchCat && matchSearch;
   });
 
-  const handleSave = (data: Omit<Product, 'id'> & { id?: number }) => {
+  const handleSave = (data: Omit<Product, 'id'> & { id?: string }) => {
     if (data.id !== undefined) {
       updateProduct(data as Product);
     } else {
@@ -453,8 +601,19 @@ function MenuManagementSection() {
                   {CATEGORY_LABELS[product.category]}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mb-3 line-clamp-1">{product.description}</p>
-              <p className="text-sm mb-3">₱{product.price}</p>
+              <p className="text-xs text-gray-400 mb-2 line-clamp-1">{product.description}</p>
+              {product.display_type && product.display_type !== 'regular' && (
+                <div className="mb-2">
+                  <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${DISPLAY_TYPE_LABELS[product.display_type]?.color ?? ''}`}>
+                    {DISPLAY_TYPE_LABELS[product.display_type]?.icon}
+                    {DISPLAY_TYPE_LABELS[product.display_type]?.label}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 mb-3">
+                <p className={`text-sm ${product.promo_price ? 'line-through text-gray-400' : ''}`}>₱{product.price}</p>
+                {product.promo_price && <p className="text-sm text-red-600 font-medium">₱{product.promo_price}</p>}
+              </div>
 
               <div className="flex items-center gap-2">
                 <button
@@ -1285,7 +1444,7 @@ export function AdminPage() {
         <header className="lg:hidden bg-white/80 backdrop-blur-xl border-b border-gray-100 flex-shrink-0 z-20 px-4 py-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="p-2.5 rounded-2xl hover:bg-gray-100 transition-all">
-              <BarChart3 className="w-5 h-5" />
+              <Menu className="w-5 h-5" />
             </button>
             <div>
               <p className="text-sm">Admin Panel</p>

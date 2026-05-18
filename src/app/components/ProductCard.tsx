@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   description: string;
   price: number;

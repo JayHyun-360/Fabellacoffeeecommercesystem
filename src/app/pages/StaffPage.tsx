@@ -7,7 +7,7 @@ import {
   CheckCircle, XCircle, Banknote, Smartphone, CreditCard,
   RefreshCw, Coffee, ChevronDown, ChevronUp, AlertCircle,
   UtensilsCrossed, ShoppingBag, QrCode, Wifi, Check, X,
-  User, LogOut
+  User, LogOut, Menu
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -305,6 +305,7 @@ export function StaffPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -351,6 +352,67 @@ export function StaffPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden" onClick={() => setMobileMenuOpen(false)} />
+      )}
+      {mobileMenuOpen && (
+        <div className="fixed inset-y-0 right-0 w-72 bg-white z-50 shadow-2xl flex flex-col md:hidden">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+            <p className="text-sm">Staff Menu</p>
+            <button onClick={() => setMobileMenuOpen(false)} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          {user && (
+            <div className="p-5 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                {user.user_metadata?.avatar_url ? (
+                  <img src={user.user_metadata.avatar_url} alt="" className="w-10 h-10 rounded-full" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                    <User className="w-5 h-5 text-gray-500" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm truncate">{user.user_metadata?.full_name ?? 'Staff'}</p>
+                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                </div>
+              </div>
+              <div className="mt-2">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  {isAdmin ? 'Admin (Preview)' : 'Staff'}
+                </span>
+              </div>
+            </div>
+          )}
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex items-center gap-2 text-gray-600">
+              <Clock className="w-4 h-4" />
+              <span className="text-sm">{dateStr} · {timeStr}</span>
+            </div>
+          </div>
+          {isAdmin && (
+            <div className="p-3">
+              <button
+                onClick={() => { router.push('/admin'); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-sm"
+              >
+                <ArrowLeft className="w-4 h-4 text-gray-400" />Back to Admin Panel
+              </button>
+            </div>
+          )}
+          <div className="mt-auto p-5 border-t border-gray-100">
+            <button
+              onClick={() => { logout(); setMobileMenuOpen(false); }}
+              className="w-full flex items-center gap-3 px-5 py-3 rounded-2xl text-sm text-red-600 hover:bg-red-50 transition-all"
+            >
+              <LogOut className="w-5 h-5" />Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-gradient-to-br from-gray-900 via-gray-900 to-black sticky top-0 z-40 shadow-2xl">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
@@ -369,14 +431,22 @@ export function StaffPage() {
               </div>
             </div>
 
-            <div className="hidden sm:flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+            <div className="hidden md:flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
               <Clock className="w-3.5 h-3.5 text-gray-300" />
               <span className="text-sm text-gray-200">{dateStr} · {timeStr}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Profile dropdown */}
-              <div className="relative" ref={profileRef}>
+              {/* Hamburger (mobile) */}
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden w-9 h-9 flex items-center justify-center rounded-full border border-white/20 hover:border-white/40 transition-all"
+              >
+                <Menu className="w-[18px] h-[18px] text-white" />
+              </button>
+
+              {/* Profile dropdown (desktop) */}
+              <div className="relative hidden md:block" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
                   className={`w-9 h-9 flex items-center justify-center rounded-full transition-all overflow-hidden border ${
@@ -488,7 +558,7 @@ export function StaffPage() {
         </div>
 
         {/* Order Type Legend */}
-        <div className="flex gap-3 flex-wrap">
+        <div className="hidden sm:flex gap-3 flex-wrap">
           {Object.entries(ORDER_TYPE_CONFIG).map(([key, cfg]) => (
             <span key={key} className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text} border border-current/20`}>
               {cfg.icon}{cfg.label}

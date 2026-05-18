@@ -1,17 +1,29 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import type { SavedOrder } from '../components/OrderHistory';
+import { isSupabaseConfigured } from '../../lib/supabase/client';
+import {
+  fetchProducts as fetchProductsFromDb,
+  createProductInDb,
+  updateProductInDb,
+  deleteProductFromDb,
+  toggleProductAvailabilityInDb,
+} from '../../lib/supabase/products';
+import type { DisplayType, SetItem } from '../../lib/supabase/database.types';
 import heroDefaultImg from '../../imports/682530946_1011749808048143_8253999997136808313_n.jpg';
 
 export interface Product {
-  id: number;
+  id: string;
   name: string;
   description: string;
   price: number;
+  promo_price?: number | null;
   category: 'coffee' | 'food' | 'pastries' | 'beverages';
+  display_type?: DisplayType;
   image: string;
   available: boolean;
+  set_items?: SetItem[] | null;
 }
 
 export interface HeroSlide {
@@ -34,74 +46,22 @@ export interface StoreSettings {
 }
 
 const INITIAL_PRODUCTS: Product[] = [
-  { id: 1, name: 'Espresso', description: 'Rich and bold single shot', price: 85, category: 'coffee', image: 'https://images.unsplash.com/photo-1528401635478-821b5f89ff94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 2, name: 'Cappuccino', description: 'Espresso with steamed milk foam', price: 120, category: 'coffee', image: 'https://images.unsplash.com/photo-1645445644664-8f44112f334c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 3, name: 'Flat White', description: 'Smooth microfoam perfection', price: 135, category: 'coffee', image: 'https://images.unsplash.com/photo-1612871616386-b0346398949d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 4, name: 'Cold Brew', description: 'Smooth, cold-steeped coffee', price: 145, category: 'coffee', image: 'https://images.unsplash.com/photo-1637178628249-215e78e3c716?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 5, name: 'Avocado Toast', description: 'Sourdough with fresh avocado', price: 185, category: 'food', image: 'https://images.unsplash.com/photo-1676471970358-1cff04452e7b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 6, name: 'Breakfast Burrito', description: 'Eggs, cheese, and chorizo', price: 165, category: 'food', image: 'https://images.unsplash.com/photo-1609158087148-3bae840bcfda?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 7, name: 'Caesar Salad', description: 'Classic with parmesan', price: 155, category: 'food', image: 'https://images.unsplash.com/photo-1616902685816-fbe1aeb3ea79?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 8, name: 'Grilled Sandwich', description: 'Turkey and swiss on rye', price: 175, category: 'food', image: 'https://images.unsplash.com/photo-1616902666559-af398792d890?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 9, name: 'Croissant', description: 'Buttery and flaky', price: 65, category: 'pastries', image: 'https://images.unsplash.com/photo-1751151856149-5ebf1d21586a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 10, name: 'Blueberry Muffin', description: 'Fresh baked daily', price: 55, category: 'pastries', image: 'https://images.unsplash.com/photo-1571157577110-493b325fdd3d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 11, name: 'Chocolate Brownie', description: 'Rich and fudgy', price: 75, category: 'pastries', image: 'https://images.unsplash.com/photo-1737700088850-d0b53f9d39ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 12, name: 'Almond Scone', description: 'Light and crumbly', price: 70, category: 'pastries', image: 'https://images.unsplash.com/photo-1712723246766-3eaea22e52ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxjcm9pc3NhbnQlMjBwYXN0cnklMjJiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 13, name: 'Matcha Latte', description: 'Ceremonial grade matcha', price: 150, category: 'beverages', image: 'https://images.unsplash.com/photo-1708572727896-117b5ea25a86?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 14, name: 'Chai Tea', description: 'Spiced black tea latte', price: 115, category: 'beverages', image: 'https://images.unsplash.com/photo-1708572808503-48242f5c9a89?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 15, name: 'Fresh Orange Juice', description: 'Squeezed to order', price: 95, category: 'beverages', image: 'https://images.unsplash.com/photo-1727850005779-1e24cac382d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: 16, name: 'Hot Chocolate', description: 'Rich Belgian chocolate', price: 125, category: 'beverages', image: 'https://images.unsplash.com/photo-1727850005809-d575cdcac28c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-];
-
-const SAMPLE_ORDERS: SavedOrder[] = [
-  {
-    orderNumber: 'FC-884521-342',
-    date: 'May 3, 2026, 09:15 AM',
-    items: [{ id: 1, name: 'Espresso', price: 85, quantity: 2, image: INITIAL_PRODUCTS[0].image }, { id: 9, name: 'Croissant', price: 65, quantity: 1, image: INITIAL_PRODUCTS[8].image }],
-    subtotal: 235, deliveryFee: 49, total: 284, deliveryType: 'delivery', paymentMethod: 'gcash',
-    name: 'Maria Santos', address: '145 Cagwait Road', city: 'Bislig', status: 'received',
-  },
-  {
-    orderNumber: 'FC-773209-118',
-    date: 'May 3, 2026, 11:42 AM',
-    items: [{ id: 2, name: 'Cappuccino', price: 120, quantity: 1 }, { id: 5, name: 'Avocado Toast', price: 185, quantity: 1 }],
-    subtotal: 305, deliveryFee: 0, total: 305, deliveryType: 'dine-in', paymentMethod: 'cod',
-    name: 'Jose Reyes', status: 'received',
-  },
-  {
-    orderNumber: 'FC-661480-507',
-    date: 'May 3, 2026, 02:20 PM',
-    items: [{ id: 13, name: 'Matcha Latte', price: 150, quantity: 2 }, { id: 11, name: 'Chocolate Brownie', price: 75, quantity: 2 }],
-    subtotal: 450, deliveryFee: 49, total: 499, deliveryType: 'delivery', paymentMethod: 'card',
-    name: 'Ana Dela Cruz', address: '78 Mangagoy St', city: 'Bislig', status: 'received',
-  },
-  {
-    orderNumber: 'FC-550371-290',
-    date: 'May 4, 2026, 07:05 AM',
-    items: [{ id: 3, name: 'Flat White', price: 135, quantity: 1 }, { id: 10, name: 'Blueberry Muffin', price: 55, quantity: 2 }],
-    subtotal: 245, deliveryFee: 0, total: 245, deliveryType: 'takeout', paymentMethod: 'gcash',
-    name: 'Ramon Villanueva', status: 'received',
-  },
-  {
-    orderNumber: 'FC-449162-033',
-    date: 'May 4, 2026, 08:30 AM',
-    items: [{ id: 4, name: 'Cold Brew', price: 145, quantity: 2 }, { id: 8, name: 'Grilled Sandwich', price: 175, quantity: 1 }],
-    subtotal: 465, deliveryFee: 0, total: 465, deliveryType: 'dine-in', paymentMethod: 'cod',
-    name: 'Liza Mercado', status: 'ongoing',
-  },
-  {
-    orderNumber: 'FC-338053-712',
-    date: 'May 5, 2026, 08:10 AM',
-    items: [{ id: 2, name: 'Cappuccino', price: 120, quantity: 2 }, { id: 12, name: 'Almond Scone', price: 70, quantity: 2 }],
-    subtotal: 380, deliveryFee: 0, total: 380, deliveryType: 'dine-in', paymentMethod: 'gcash',
-    name: 'Carlo Bautista', status: 'pending',
-  },
-  {
-    orderNumber: 'FC-227944-889',
-    date: 'May 5, 2026, 09:05 AM',
-    items: [{ id: 1, name: 'Espresso', price: 85, quantity: 1 }, { id: 9, name: 'Croissant', price: 65, quantity: 1 }],
-    subtotal: 150, deliveryFee: 0, total: 150, deliveryType: 'takeout', paymentMethod: 'cod',
-    name: 'Sofia Ramos', status: 'pending',
-  },
+  { id: '1', name: 'Espresso', description: 'Rich and bold single shot', price: 85, category: 'coffee', display_type: 'regular', image: 'https://images.unsplash.com/photo-1528401635478-821b5f89ff94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '2', name: 'Cappuccino', description: 'Espresso with steamed milk foam', price: 120, category: 'coffee', display_type: 'regular', image: 'https://images.unsplash.com/photo-1645445644664-8f44112f334c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '3', name: 'Flat White', description: 'Smooth microfoam perfection', price: 135, category: 'coffee', display_type: 'regular', image: 'https://images.unsplash.com/photo-1612871616386-b0346398949d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '4', name: 'Cold Brew', description: 'Smooth, cold-steeped coffee', price: 145, category: 'coffee', display_type: 'regular', image: 'https://images.unsplash.com/photo-1637178628249-215e78e3c716?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '5', name: 'Avocado Toast', description: 'Sourdough with fresh avocado', price: 185, category: 'food', display_type: 'regular', image: 'https://images.unsplash.com/photo-1676471970358-1cff04452e7b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '6', name: 'Breakfast Burrito', description: 'Eggs, cheese, and chorizo', price: 165, category: 'food', display_type: 'regular', image: 'https://images.unsplash.com/photo-1609158087148-3bae840bcfda?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '7', name: 'Caesar Salad', description: 'Classic with parmesan', price: 155, category: 'food', display_type: 'regular', image: 'https://images.unsplash.com/photo-1616902685816-fbe1aeb3ea79?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '8', name: 'Grilled Sandwich', description: 'Turkey and swiss on rye', price: 175, category: 'food', display_type: 'regular', image: 'https://images.unsplash.com/photo-1616902666559-af398792d890?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '9', name: 'Croissant', description: 'Buttery and flaky', price: 65, category: 'pastries', display_type: 'regular', image: 'https://images.unsplash.com/photo-1751151856149-5ebf1d21586a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '10', name: 'Blueberry Muffin', description: 'Fresh baked daily', price: 55, category: 'pastries', display_type: 'regular', image: 'https://images.unsplash.com/photo-1571157577110-493b325fdd3d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '11', name: 'Chocolate Brownie', description: 'Rich and fudgy', price: 75, category: 'pastries', display_type: 'regular', image: 'https://images.unsplash.com/photo-1737700088850-d0b53f9d39ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '12', name: 'Almond Scone', description: 'Light and crumbly', price: 70, category: 'pastries', display_type: 'regular', image: 'https://images.unsplash.com/photo-1712723246766-3eaea22e52ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxjcm9pc3NhbnQlMjJiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '13', name: 'Matcha Latte', description: 'Ceremonial grade matcha', price: 150, category: 'beverages', display_type: 'regular', image: 'https://images.unsplash.com/photo-1708572727896-117b5ea25a86?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '14', name: 'Chai Tea', description: 'Spiced black tea latte', price: 115, category: 'beverages', display_type: 'regular', image: 'https://images.unsplash.com/photo-1708572808503-48242f5c9a89?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '15', name: 'Fresh Orange Juice', description: 'Squeezed to order', price: 95, category: 'beverages', display_type: 'regular', image: 'https://images.unsplash.com/photo-1727850005779-1e24cac382d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
+  { id: '16', name: 'Hot Chocolate', description: 'Rich Belgian chocolate', price: 125, category: 'beverages', display_type: 'regular', image: 'https://images.unsplash.com/photo-1727850005809-d575cdcac28c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
 ];
 
 const INITIAL_SETTINGS: StoreSettings = {
@@ -123,12 +83,14 @@ interface AppContextType {
   products: Product[];
   orders: SavedOrder[];
   settings: StoreSettings;
+  productsLoading: boolean;
   addOrder: (order: SavedOrder) => void;
   updateOrderStatus: (orderNumber: string, status: SavedOrder['status']) => void;
-  addProduct: (product: Omit<Product, 'id'>) => void;
-  updateProduct: (product: Product) => void;
-  deleteProduct: (id: number) => void;
-  toggleProductAvailability: (id: number) => void;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
+  updateProduct: (product: Product) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  toggleProductAvailability: (id: string) => Promise<void>;
+  refreshProducts: () => Promise<void>;
   updateSettings: (updates: Partial<StoreSettings>) => void;
   updateHeroSlide: (id: string, updates: Partial<HeroSlide>) => void;
   addHeroSlide: (slide: Omit<HeroSlide, 'id'>) => void;
@@ -141,25 +103,142 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [orders, setOrders] = useState<SavedOrder[]>([]);
   const [settings, setSettings] = useState<StoreSettings>(INITIAL_SETTINGS);
+  const [productsLoading, setProductsLoading] = useState(false);
+
+  const refreshProducts = useCallback(async () => {
+    if (!isSupabaseConfigured) return;
+    try {
+      setProductsLoading(true);
+      const dbProducts = await fetchProductsFromDb();
+      if (dbProducts.length > 0) {
+        setProducts(dbProducts.map((p) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          promo_price: p.promo_price,
+          category: p.category,
+          display_type: p.display_type,
+          image: p.image,
+          available: p.available,
+          set_items: p.set_items,
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to load products from Supabase:', err);
+    } finally {
+      setProductsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshProducts();
+  }, [refreshProducts]);
 
   const addOrder = (order: SavedOrder) => setOrders((prev) => [order, ...prev]);
 
   const updateOrderStatus = (orderNumber: string, status: SavedOrder['status']) =>
     setOrders((prev) => prev.map((o) => (o.orderNumber === orderNumber ? { ...o, status } : o)));
 
-  const addProduct = (product: Omit<Product, 'id'>) => {
-    const id = Math.max(0, ...products.map((p) => p.id)) + 1;
-    setProducts((prev) => [...prev, { ...product, id }]);
+  const addProduct = async (product: Omit<Product, 'id'>) => {
+    if (isSupabaseConfigured) {
+      try {
+        const created = await createProductInDb({
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          promo_price: product.promo_price ?? null,
+          category: product.category,
+          display_type: product.display_type ?? 'regular',
+          image: product.image,
+          available: product.available,
+          set_items: product.set_items ?? null,
+        });
+        setProducts((prev) => [...prev, {
+          id: created.id,
+          name: created.name,
+          description: created.description,
+          price: created.price,
+          promo_price: created.promo_price,
+          category: created.category,
+          display_type: created.display_type,
+          image: created.image,
+          available: created.available,
+          set_items: created.set_items,
+        }]);
+      } catch (err) {
+        console.error('Failed to add product:', err);
+        throw err;
+      }
+    } else {
+      const id = String(Math.max(0, ...products.map((p) => parseInt(p.id, 10) || 0)) + 1);
+      setProducts((prev) => [...prev, { ...product, id }]);
+    }
   };
 
-  const updateProduct = (product: Product) =>
-    setProducts((prev) => prev.map((p) => (p.id === product.id ? product : p)));
+  const updateProduct = async (product: Product) => {
+    if (isSupabaseConfigured) {
+      try {
+        const updated = await updateProductInDb(product.id, {
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          promo_price: product.promo_price ?? null,
+          category: product.category,
+          display_type: product.display_type ?? 'regular',
+          image: product.image,
+          available: product.available,
+          set_items: product.set_items ?? null,
+        });
+        setProducts((prev) => prev.map((p) => (p.id === product.id ? {
+          id: updated.id,
+          name: updated.name,
+          description: updated.description,
+          price: updated.price,
+          promo_price: updated.promo_price,
+          category: updated.category,
+          display_type: updated.display_type,
+          image: updated.image,
+          available: updated.available,
+          set_items: updated.set_items,
+        } : p)));
+      } catch (err) {
+        console.error('Failed to update product:', err);
+        throw err;
+      }
+    } else {
+      setProducts((prev) => prev.map((p) => (p.id === product.id ? product : p)));
+    }
+  };
 
-  const deleteProduct = (id: number) =>
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+  const deleteProduct = async (id: string) => {
+    if (isSupabaseConfigured) {
+      try {
+        await deleteProductFromDb(id);
+        setProducts((prev) => prev.filter((p) => p.id !== id));
+      } catch (err) {
+        console.error('Failed to delete product:', err);
+        throw err;
+      }
+    } else {
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    }
+  };
 
-  const toggleProductAvailability = (id: number) =>
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, available: !p.available } : p)));
+  const toggleProductAvailability = async (id: string) => {
+    const product = products.find((p) => p.id === id);
+    if (!product) return;
+    const newAvailable = !product.available;
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, available: newAvailable } : p)));
+    if (isSupabaseConfigured) {
+      try {
+        await toggleProductAvailabilityInDb(id, newAvailable);
+      } catch (err) {
+        console.error('Failed to toggle availability:', err);
+        setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, available: !newAvailable } : p)));
+      }
+    }
+  };
 
   const updateSettings = (updates: Partial<StoreSettings>) =>
     setSettings((prev) => ({ ...prev, ...updates }));
@@ -185,9 +264,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider
       value={{
-        products, orders, settings,
+        products, orders, settings, productsLoading,
         addOrder, updateOrderStatus,
-        addProduct, updateProduct, deleteProduct, toggleProductAvailability,
+        addProduct, updateProduct, deleteProduct, toggleProductAvailability, refreshProducts,
         updateSettings, updateHeroSlide, addHeroSlide, removeHeroSlide,
       }}
     >
