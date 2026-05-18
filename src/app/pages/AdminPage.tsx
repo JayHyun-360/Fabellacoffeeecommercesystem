@@ -6,10 +6,10 @@ import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard, UtensilsCrossed, Receipt, Settings, ArrowLeft,
   TrendingUp, ShoppingBag, Coffee, Package, Plus, Pencil, Trash2,
-  Eye, EyeOff, X, Check, Search, Image, ChevronDown,
+  Eye, EyeOff, X, Check, Search, Image, ChevronDown, ChevronUp,
   BarChart3, Star, AlertCircle, Upload, Tag, Layers, Menu,
   Banknote, Smartphone, CreditCard, Users2, Shield, UserCog,
-  User, LogOut
+  User, LogOut, FolderArchive, History, Clock
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
@@ -18,6 +18,7 @@ import { useApp, type Product, type HeroSlide } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import type { SavedOrder } from '../components/OrderHistory';
 import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
+import { createClient } from '../../lib/supabase/client';
 
 import { fetchAllProfiles, updateProfileRole } from '../../lib/supabase/auth';
 import type { AppRole, Profile, DisplayType, SetItem } from '../../lib/supabase/database.types';
@@ -700,12 +701,21 @@ const PAYMENT_CFG: Record<string, { label: string; color: string; icon: React.Re
 };
 
 function TransactionsSection() {
-  const { orders, updateOrderStatus } = useApp();
+  const { orders, updateOrderStatus, refreshOrders } = useApp();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+  // Sales Ledgers States
+  const [reports, setReports] = useState<any[]>([]);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportName, setReportName] = useState('');
+  const [overwriteLatest, setOverwriteLatest] = useState(false);
+  const [loadingReports, setLoadingReports] = useState(false);
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
+  const [showLedger, setShowLedger] = useState(false);
 
   const filtered = orders.filter((o) => {
     const matchStatus = statusFilter === 'all' || o.status === statusFilter;
@@ -728,6 +738,99 @@ function TransactionsSection() {
     revenue: orders.filter((o) => o.deliveryType === type && o.status !== 'cancelled').reduce((s, o) => s + o.total, 0),
   }));
 
+  // Fetch saved ledgers reports
+  const loadReports = useCallback(async () => {
+    try {
+      setLoadingReports(true);
+      const supabase = createClient();
+      const { data, error } = await (supabase.from('sales_records') as any)
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setReports(data || []);
+    } catch (err) {
+      console.error("Failed to load sales ledgers:", err);
+    } finally {
+      setLoadingReports(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadReports();
+  }, [loadReports]);
+
+  const handleRecordReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportName.trim()) return;
+
+    try {
+      const supabase = createClient();
+      const reportData = {
+        report_name: reportName,
+        total_orders: orders.length,
+        revenue: totalRevenue,
+        details: orders,
+      };
+
+      if (overwriteLatest && reports.length > 0) {
+        const latestId = reports[0].id;
+        const { error } = await (supabase.from('sales_records') as any)
+          .update(reportData)
+          .eq('id', latestId);
+        if (error) throw error;
+        alert("Latest sales ledger report has been successfully overwritten!");
+      } else {
+        const { error } = await (supabase.from('sales_records') as any)
+          .insert(reportData);
+        if (error) throw error;
+        alert("New sales ledger report has been successfully recorded!");
+      }
+
+      setReportName('');
+      setShowReportModal(false);
+      loadReports();
+    } catch (err) {
+      console.error("Failed to record report:", err);
+      alert("Failed to record report. Make sure you ran the SQL script to create the sales_records table.");
+    }
+  };
+
+  const handleDeleteReport = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this recorded report?")) return;
+    try {
+      const supabase = createClient();
+      const { error } = await (supabase.from('sales_records') as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      loadReports();
+    } catch (err) {
+      console.error("Failed to delete report:", err);
+    }
+  };
+
+  const handleClearActiveTransactions = async () => {
+    if (!confirm("⚠️ DANGER: This will permanently delete ALL active orders and transactions from BOTH your screen and your database! This action cannot be undone.\n\nAre you sure you want to clear active transactions?")) {
+      return;
+    }
+    
+    try {
+      const supabase = createClient();
+      const { error } = await (supabase.from('orders') as any)
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      if (error) throw error;
+      
+      alert("Active transaction history successfully wiped!");
+      if (refreshOrders) {
+        await refreshOrders();
+      }
+    } catch (err) {
+      console.error("Failed to clear transactions:", err);
+      alert("Failed to clear transactions. Please make sure the orders table exists and is connected.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -737,6 +840,112 @@ function TransactionsSection() {
             {orders.length} total transactions · ₱{totalRevenue.toLocaleString()} revenue
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setOverwriteLatest(false);
+              setShowReportModal(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-black text-white rounded-full text-xs font-medium hover:shadow-lg hover:scale-105 transition-all"
+          >
+            <FolderArchive className="w-3.5 h-3.5" /> Record Report
+          </button>
+          <button
+            onClick={handleClearActiveTransactions}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-red-50 border border-red-200 text-red-600 rounded-full text-xs font-medium hover:bg-red-100 hover:shadow-md transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Clear Active Queue
+          </button>
+        </div>
+      </div>
+
+      {/* Sales Ledgers Archive Dropdown */}
+      <div className="bg-white rounded-3xl border border-gray-200/50 shadow-md overflow-hidden">
+        <button
+          onClick={() => setShowLedger(!showLedger)}
+          className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 hover:bg-gray-100/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-black text-white rounded-2xl">
+              <History className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-gray-900">Archived Sales Ledgers</p>
+              <p className="text-xs text-gray-400">{reports.length} recorded report{reports.length !== 1 ? 's' : ''} saved in archive</p>
+            </div>
+          </div>
+          <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showLedger ? 'rotate-180' : ''}`} />
+        </button>
+
+        {showLedger && (
+          <div className="p-6 space-y-4">
+            {reports.length === 0 ? (
+              <div className="py-8 text-center text-gray-400 text-sm">
+                No archived ledgers found. Record your first report using the "Record Report" button!
+              </div>
+            ) : (
+              <div className="grid gap-3 max-h-[400px] overflow-y-auto pr-1">
+                {reports.map((report) => {
+                  const isExpanded = expandedReportId === report.id;
+                  const dateStr = new Date(report.created_at).toLocaleString();
+                  const snapOrders = report.details || [];
+                  
+                  return (
+                    <div key={report.id} className="border border-gray-100 rounded-2xl p-4 bg-gray-50 hover:bg-white hover:shadow-md transition-all">
+                      <div className="flex items-start justify-between gap-4 flex-wrap">
+                        <div>
+                          <p className="font-semibold text-gray-900">{report.report_name}</p>
+                          <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                            <Clock className="w-3.5 h-3.5" /> {dateStr}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="text-xs text-gray-400">{report.total_orders} Orders</p>
+                            <p className="font-semibold text-emerald-600">₱{Number(report.revenue).toLocaleString()}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setExpandedReportId(isExpanded ? null : report.id)}
+                              className="p-1.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                              title="View details"
+                            >
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReport(report.id)}
+                              className="p-1.5 bg-white border border-red-100 text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                              title="Delete report"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Report Snapshots</p>
+                          <div className="max-h-[200px] overflow-y-auto space-y-1.5 pr-1">
+                            {snapOrders.map((ord: any, idx: number) => (
+                              <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-100/50 last:border-0">
+                                <div>
+                                  <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 mr-2">{ord.orderNumber}</span>
+                                  <span className="text-gray-700">{ord.name}</span>
+                                </div>
+                                <span className="font-semibold text-gray-900">₱{ord.total.toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Revenue Overview */}
@@ -941,6 +1150,76 @@ function TransactionsSection() {
           );
         })}
       </div>
+
+      {/* Record Report Modal Dialog */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100">
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-lg font-bold text-gray-900">Record Sales Ledger</p>
+              <button onClick={() => setShowReportModal(false)} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleRecordReport} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Report Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Morning Shift Revenue"
+                  value={reportName}
+                  onChange={(e) => setReportName(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-black transition-colors"
+                />
+              </div>
+
+              {reports.length > 0 && (
+                <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-100 rounded-2xl text-xs text-amber-800">
+                  <input
+                    type="checkbox"
+                    id="overwrite"
+                    checked={overwriteLatest}
+                    onChange={(e) => setOverwriteLatest(e.target.checked)}
+                    className="rounded text-amber-600 focus:ring-amber-500"
+                  />
+                  <label htmlFor="overwrite" className="cursor-pointer select-none">
+                    Overwrite the latest archived report (<strong>{reports[0].report_name}</strong>) instead of creating a new one.
+                  </label>
+                </div>
+              )}
+
+              <div className="bg-gray-50 p-4 rounded-2xl space-y-1.5 text-xs text-gray-600 border border-gray-100">
+                <div className="flex justify-between">
+                  <span>Current Orders Snapshot:</span>
+                  <span className="font-semibold text-gray-900">{orders.length} orders</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Accumulated Revenue:</span>
+                  <span className="font-semibold text-emerald-600">₱{totalRevenue.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(false)}
+                  className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-black text-white rounded-2xl text-sm font-medium hover:shadow-lg transition-all"
+                >
+                  Confirm Record
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
