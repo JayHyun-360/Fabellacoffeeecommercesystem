@@ -1137,6 +1137,8 @@ function StoreSettingsSection() {
   const [saved, setSaved] = useState(false);
   const [newSlide, setNewSlide] = useState({ title: '', subtitle: '', description: '', image: '' });
   const [addingSlide, setAddingSlide] = useState(false);
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [uploadingSlide, setUploadingSlide] = useState(false);
 
   const handleSaveInfo = () => {
     updateSettings({
@@ -1196,23 +1198,59 @@ function StoreSettingsSection() {
                   className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black" />
                 <input placeholder="Description" value={newSlide.description} onChange={(e) => setNewSlide({ ...newSlide, description: e.target.value })}
                   className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black" />
-                <input placeholder="Image URL" value={newSlide.image} onChange={(e) => setNewSlide({ ...newSlide, image: e.target.value })}
-                  className="col-span-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black" />
+                
+                {/* Image Upload */}
+                <div className="col-span-2 relative">
+                  <input type="file" id="new-slide-image" accept="image/*" className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setNewImageFile(e.target.files[0]);
+                      }
+                    }}
+                  />
+                  <label htmlFor="new-slide-image"
+                    className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200 border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                    <Upload className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-500 truncate">
+                      {newImageFile ? newImageFile.name : 'Upload slide image...'}
+                    </span>
+                  </label>
+                </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setAddingSlide(false)}
+                <button onClick={() => {
+                  setAddingSlide(false);
+                  setNewImageFile(null);
+                  setNewSlide({ title: '', subtitle: '', description: '', image: '' });
+                }}
                   className="flex-1 py-2.5 border border-gray-200 rounded-full text-sm hover:border-black hover:shadow-md transition-all">
                   Cancel
                 </button>
-                <button onClick={() => {
-                  if (newSlide.title && newSlide.image) {
-                    addHeroSlide(newSlide);
+                <button 
+                  disabled={uploadingSlide}
+                  onClick={async () => {
+                  if (newSlide.title && (newSlide.image || newImageFile)) {
+                    setUploadingSlide(true);
+                    let finalImage = newSlide.image;
+                    if (newImageFile) {
+                      try {
+                        finalImage = await uploadProductImage(newImageFile);
+                      } catch (err) {
+                        console.error('Slide image upload failed:', err);
+                        alert('Image upload failed. Please try again.');
+                        setUploadingSlide(false);
+                        return;
+                      }
+                    }
+                    addHeroSlide({ ...newSlide, image: finalImage });
                     setNewSlide({ title: '', subtitle: '', description: '', image: '' });
+                    setNewImageFile(null);
                     setAddingSlide(false);
+                    setUploadingSlide(false);
                   }
                 }}
-                  className="flex-1 py-2.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-full text-sm hover:shadow-lg hover:scale-105 transition-all">
-                  Add Slide
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-full text-sm hover:shadow-lg hover:scale-105 transition-all disabled:opacity-70 disabled:hover:scale-100">
+                  {uploadingSlide ? <><span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />Uploading...</> : 'Add Slide'}
                 </button>
               </div>
             </div>
@@ -1275,9 +1313,25 @@ function SlideEditor({ slide, index, canDelete, onUpdate, onDelete }: {
 }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ ...slide });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleSave = () => {
-    onUpdate(form);
+  const handleSave = async () => {
+    setUploading(true);
+    let finalImage = form.image;
+    if (imageFile) {
+      try {
+        finalImage = await uploadProductImage(imageFile);
+      } catch (err) {
+        console.error('Slide image upload failed:', err);
+        alert('Image upload failed. Please try again.');
+        setUploading(false);
+        return;
+      }
+    }
+    onUpdate({ ...form, image: finalImage });
+    setImageFile(null);
+    setUploading(false);
     setEditing(false);
   };
 
@@ -1319,17 +1373,36 @@ function SlideEditor({ slide, index, canDelete, onUpdate, onDelete }: {
               className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black" />
             <input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black" />
-            <input placeholder="Image URL (Unsplash, etc.)" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })}
-              className="col-span-2 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black" />
+            
+            {/* Image Upload */}
+            <div className="col-span-2 relative">
+              <input type="file" id={`slide-image-${slide.id}`} accept="image/*" className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setImageFile(e.target.files[0]);
+                    // Create an object URL for preview
+                    const url = URL.createObjectURL(e.target.files[0]);
+                    setForm({ ...form, image: url });
+                  }
+                }}
+              />
+              <label htmlFor={`slide-image-${slide.id}`}
+                className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-200 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                <Upload className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-500 truncate">
+                  {imageFile ? imageFile.name : 'Replace image...'}
+                </span>
+              </label>
+            </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setEditing(false)}
+            <button onClick={() => { setEditing(false); setImageFile(null); setForm({ ...slide }); }}
               className="flex-1 py-2.5 border border-gray-200 rounded-full text-sm hover:border-black hover:shadow-md transition-all">
               Cancel
             </button>
-            <button onClick={handleSave}
-              className="flex-1 py-2.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-full text-sm hover:shadow-lg hover:scale-105 transition-all">
-              Save Slide
+            <button onClick={handleSave} disabled={uploading}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-full text-sm hover:shadow-lg hover:scale-105 transition-all disabled:opacity-70 disabled:hover:scale-100">
+              {uploading ? <><span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />Saving...</> : 'Save Slide'}
             </button>
           </div>
         </div>
