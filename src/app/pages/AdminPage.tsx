@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard, UtensilsCrossed, Receipt, Settings, ArrowLeft,
@@ -812,7 +812,7 @@ function UsersManagementSection() {
     }
   };
 
-  useState(() => { loadProfiles(); });
+  useEffect(() => { loadProfiles(); }, []);
 
   const handleRoleChange = async (userId: string, newRole: AppRole) => {
     try {
