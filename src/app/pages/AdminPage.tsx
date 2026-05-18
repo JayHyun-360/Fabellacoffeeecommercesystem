@@ -1,6 +1,8 @@
+'use client';
+
 import React from 'react';
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router';
+import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard, UtensilsCrossed, Receipt, Settings, ArrowLeft,
   TrendingUp, ShoppingBag, Coffee, Package, Plus, Pencil, Trash2,
@@ -887,7 +889,7 @@ function StoreSettingsSection() {
               <input
                 type="text"
                 placeholder={placeholder}
-                value={(info as Record<string, string>)[key]}
+                value={(info as unknown as Record<string, string>)[key]}
                 onChange={(e) => setInfo({ ...info, [key]: e.target.value })}
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black transition-colors"
               />
@@ -991,7 +993,7 @@ function SlideEditor({ slide, index, canDelete, onUpdate, onDelete }: {
 // ─── Main Admin Page ──────────────────��───────────────────────────────────────
 
 export function AdminPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [section, setSection] = useState<AdminSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -1020,7 +1022,7 @@ export function AdminPage() {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-900 to-black p-0.5 shadow-lg">
               <div className="w-full h-full rounded-2xl bg-white p-1 flex items-center justify-center">
-                <img src={logoImg} alt="Fabella Coffee" className="w-full h-full object-contain" />
+                <img src={typeof logoImg === 'string' ? logoImg : logoImg.src} alt="Fabella Coffee" className="w-full h-full object-contain" />
               </div>
             </div>
             <div>
@@ -1051,7 +1053,7 @@ export function AdminPage() {
         {/* Footer */}
         <div className="p-5 border-t border-gray-100">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => router.push('/')}
             className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm text-gray-600 hover:bg-gray-50 hover:shadow-sm transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -1073,9 +1075,9 @@ export function AdminPage() {
               <p className="text-xs text-gray-400">{navItems.find((n) => n.key === section)?.label}</p>
             </div>
           </div>
-          <button onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-br from-gray-900 to-black text-white rounded-full text-sm hover:shadow-lg transition-all">
-            <ArrowLeft className="w-4 h-4" />Exit
+          <button           onClick={() => router.push('/')}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-br from-gray-900 to-black text-white rounded-full text-sm hover:shadow-lg transition-all">
+                      <ArrowLeft className="w-4 h-4" />Exit
           </button>
         </header>
 

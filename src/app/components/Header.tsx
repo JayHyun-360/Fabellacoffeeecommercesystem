@@ -1,6 +1,6 @@
 import { ShoppingCart, Menu, X, Search, History, Users2, Coffee, ShieldCheck, ChevronRight } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useRouter } from 'next/navigation';
 import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
 
 interface HeaderProps {
@@ -11,7 +11,7 @@ interface HeaderProps {
 }
 
 export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }: HeaderProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
   const accessRef = useRef<HTMLDivElement>(null);
@@ -33,7 +33,7 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
         <div className="flex items-center gap-10">
           {/* Logo */}
           <a href="#" className="flex items-center gap-3 flex-shrink-0">
-            <img src={logoImg} alt="Fabella Coffee" className="h-14 w-14 object-contain" />
+            <img src={typeof logoImg === 'string' ? logoImg : logoImg.src} alt="Fabella Coffee" className="h-14 w-14 object-contain" />
             <span className="text-sm tracking-tight font-medium">FABELLA COFFEE</span>
           </a>
 
@@ -95,7 +95,7 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
 
                 <div className="p-2 space-y-1">
                   <button
-                    onClick={() => { navigate('/staff'); setAccessOpen(false); }}
+                    onClick={() => { router.push('/staff'); setAccessOpen(false); }}
                     className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group text-left"
                   >
                     <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -109,7 +109,7 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
                   </button>
 
                   <button
-                    onClick={() => { navigate('/admin'); setAccessOpen(false); }}
+                    onClick={() => { router.push('/admin'); setAccessOpen(false); }}
                     className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group text-left"
                   >
                     <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -160,11 +160,11 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
 
             <div className="border-t border-gray-100 pt-2 mt-1">
               <p className="text-xs text-gray-400 mb-2 px-1">Switch Portal</p>
-              <button onClick={() => { navigate('/staff'); setMobileMenuOpen(false); }}
+              <button onClick={() => { router.push('/staff'); setMobileMenuOpen(false); }}
                 className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity">
                 <Coffee className="w-5 h-5 text-blue-500" /><span className="text-sm">Staff Portal</span>
               </button>
-              <button onClick={() => { navigate('/admin'); setMobileMenuOpen(false); }}
+              <button onClick={() => { router.push('/admin'); setMobileMenuOpen(false); }}
                 className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity">
                 <ShieldCheck className="w-5 h-5 text-purple-500" /><span className="text-sm">Admin Panel</span>
               </button>

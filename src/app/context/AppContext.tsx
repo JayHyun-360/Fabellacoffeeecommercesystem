@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useState, ReactNode } from 'react';
 import type { SavedOrder } from '../components/OrderHistory';
 import heroDefaultImg from '../../imports/682530946_1011749808048143_8253999997136808313_n.jpg';
@@ -104,7 +106,7 @@ const SAMPLE_ORDERS: SavedOrder[] = [
 
 const INITIAL_SETTINGS: StoreSettings = {
   heroSlides: [
-    { id: 'slide-1', title: 'Fabella Coffee', subtitle: 'Crafted with Precision', description: 'Experience the finest specialty coffee, roasted to perfection', image: heroDefaultImg },
+    { id: 'slide-1', title: 'Fabella Coffee', subtitle: 'Crafted with Precision', description: 'Experience the finest specialty coffee, roasted to perfection', image: typeof heroDefaultImg === 'string' ? heroDefaultImg : heroDefaultImg.src },
     { id: 'slide-2', title: 'Fresh Pastries', subtitle: 'Baked Daily', description: 'Indulge in our artisanal pastries and baked goods', image: 'https://images.unsplash.com/photo-1613559724083-359907cb5cb0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw1fHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080' },
     { id: 'slide-3', title: 'Gourmet Menu', subtitle: 'All Day Dining', description: 'Explore our carefully curated food menu', image: 'https://images.unsplash.com/photo-1545418314-7ce0b9b53901?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxjb2ZmZWUlMjBzaG9wJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzc3Mzg3MTY1fDA&ixlib=rb-4.1.0&q=80&w=1080' },
   ],

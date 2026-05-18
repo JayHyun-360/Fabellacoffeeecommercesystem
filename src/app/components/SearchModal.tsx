@@ -6,8 +6,9 @@ interface Product {
   name: string;
   description: string;
   price: number;
-  category: string;
+  category: 'coffee' | 'food' | 'pastries' | 'beverages';
   image: string;
+  available: boolean;
 }
 
 interface SearchModalProps {

@@ -1,5 +1,7 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Clock, Truck, Store, Package, MapPin,
   CheckCircle, XCircle, Banknote, Smartphone, CreditCard,
@@ -295,7 +297,7 @@ function StaffOrderCard({ order, queueNum }: { order: SavedOrder; queueNum: numb
 
 // ─── Staff Page ───────────────────────────────────────────────────────────────
 export function StaffPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { orders } = useApp();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -341,7 +343,7 @@ export function StaffPage() {
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-sm p-0.5 border border-white/20 shadow-lg">
                 <div className="w-full h-full rounded-2xl bg-white/95 flex items-center justify-center p-1">
-                  <img src={logoImg} alt="Fabella Coffee" className="w-full h-full object-contain" />
+                  <img src={typeof logoImg === 'string' ? logoImg : logoImg.src} alt="Fabella Coffee" className="w-full h-full object-contain" />
                 </div>
               </div>
               <div>
@@ -358,7 +360,7 @@ export function StaffPage() {
             </div>
 
             <button
-              onClick={() => navigate('/')}
+              onClick={() => router.push('/')}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-full text-sm transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
