@@ -5,15 +5,14 @@ export async function fetchStoreSettingsFromDb(): Promise<StoreSettings | null> 
   if (!isSupabaseConfigured) return null;
   const supabase = createClient();
   
-  // We only expect one row in store_settings, so we limit to 1
+  // Use maybeSingle to avoid 406 errors if the table is empty
   const { data, error } = await (supabase as any)
     .from('store_settings')
     .select('*')
     .limit(1)
-    .single();
+    .maybeSingle();
     
-  if (error && error.code !== 'PGRST116') {
-    // Ignore PGRST116 (No rows found) since we might use defaults
+  if (error) {
     console.error('Error fetching store settings:', error);
     throw error;
   }
@@ -26,11 +25,16 @@ export async function updateStoreSettingsInDb(updates: Partial<Omit<StoreSetting
   const supabase = createClient();
   
   // Try to get the existing settings row ID first
-  const { data: existing } = await (supabase as any)
+  const { data: existing, error: existingError } = await (supabase as any)
     .from('store_settings')
     .select('id')
     .limit(1)
-    .single();
+    .maybeSingle();
+
+  if (existingError) {
+    console.error('Error checking existing store settings:', existingError);
+    throw existingError;
+  }
 
   if (existing) {
     const { data, error } = await (supabase as any)

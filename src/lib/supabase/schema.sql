@@ -207,9 +207,9 @@ ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "store_settings: public read" ON public.store_settings
   FOR SELECT USING (TRUE);
 
--- Only admins can update store settings
-CREATE POLICY "store_settings: admin write" ON public.store_settings
-  FOR ALL USING ((auth.jwt() ->> 'role') = 'admin');
+-- Only authenticated users (Admins/Staff) can update store settings
+CREATE POLICY "store_settings: auth write" ON public.store_settings
+  FOR ALL TO authenticated USING (TRUE) WITH CHECK (TRUE);
 
 -- ─── Seed: Initial store settings row ─────────────────────────────────────────
 INSERT INTO public.store_settings (store_name, weekday_hours, weekend_hours, address)
