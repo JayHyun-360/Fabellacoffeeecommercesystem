@@ -10,6 +10,7 @@ import {
   deleteProductFromDb,
   toggleProductAvailabilityInDb,
 } from '../../lib/supabase/products';
+import { fetchStoreSettingsFromDb, updateStoreSettingsInDb } from '../../lib/supabase/store_settings';
 import type { DisplayType, SetItem } from '../../lib/supabase/database.types';
 import heroDefaultImg from '../../imports/682530946_1011749808048143_8253999997136808313_n.jpg';
 
@@ -91,10 +92,10 @@ interface AppContextType {
   deleteProduct: (id: string) => Promise<void>;
   toggleProductAvailability: (id: string) => Promise<void>;
   refreshProducts: () => Promise<void>;
-  updateSettings: (updates: Partial<StoreSettings>) => void;
-  updateHeroSlide: (id: string, updates: Partial<HeroSlide>) => void;
-  addHeroSlide: (slide: Omit<HeroSlide, 'id'>) => void;
-  removeHeroSlide: (id: string) => void;
+  updateSettings: (updates: Partial<StoreSettings>) => Promise<void>;
+  updateHeroSlide: (id: string, updates: Partial<HeroSlide>) => Promise<void>;
+  addHeroSlide: (slide: Omit<HeroSlide, 'id'>) => Promise<void>;
+  removeHeroSlide: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType>(null!);
@@ -131,9 +132,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshSettings = useCallback(async () => {
+    if (!isSupabaseConfigured) return;
+    try {
+      const dbSettings = await fetchStoreSettingsFromDb();
+      if (dbSettings) {
+        setSettings({
+          heroSlides: dbSettings.hero_slides || INITIAL_SETTINGS.heroSlides,
+          storeName: dbSettings.store_name,
+          email: dbSettings.email,
+          phone: dbSettings.phone,
+          address: dbSettings.address,
+          weekdayHours: dbSettings.weekday_hours,
+          weekendHours: dbSettings.weekend_hours,
+          announcement: dbSettings.announcement || '',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load store settings:', err);
+    }
+  }, []);
+
   useEffect(() => {
     refreshProducts();
-  }, [refreshProducts]);
+    refreshSettings();
+  }, [refreshProducts, refreshSettings]);
 
   const addOrder = (order: SavedOrder) => setOrders((prev) => [order, ...prev]);
 
@@ -240,26 +263,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateSettings = (updates: Partial<StoreSettings>) =>
-    setSettings((prev) => ({ ...prev, ...updates }));
+  const updateSettings = async (updates: Partial<StoreSettings>) => {
+    const newSettings = { ...settings, ...updates };
+    setSettings(newSettings);
+    if (isSupabaseConfigured) {
+      try {
+        await updateStoreSettingsInDb({
+          store_name: newSettings.storeName,
+          email: newSettings.email,
+          phone: newSettings.phone,
+          address: newSettings.address,
+          weekday_hours: newSettings.weekdayHours,
+          weekend_hours: newSettings.weekendHours,
+          announcement: newSettings.announcement,
+          hero_slides: newSettings.heroSlides,
+        });
+      } catch (err) {
+        console.error('Failed to save settings:', err);
+      }
+    }
+  };
 
-  const updateHeroSlide = (id: string, updates: Partial<HeroSlide>) =>
-    setSettings((prev) => ({
-      ...prev,
-      heroSlides: prev.heroSlides.map((s) => (s.id === id ? { ...s, ...updates } : s)),
-    }));
+  const updateHeroSlide = async (id: string, updates: Partial<HeroSlide>) => {
+    const newSlides = settings.heroSlides.map((s) => (s.id === id ? { ...s, ...updates } : s));
+    const newSettings = { ...settings, heroSlides: newSlides };
+    setSettings(newSettings);
+    if (isSupabaseConfigured) {
+      await updateStoreSettingsInDb({ hero_slides: newSlides });
+    }
+  };
 
-  const addHeroSlide = (slide: Omit<HeroSlide, 'id'>) =>
-    setSettings((prev) => ({
-      ...prev,
-      heroSlides: [...prev.heroSlides, { ...slide, id: `slide-${Date.now()}` }],
-    }));
+  const addHeroSlide = async (slide: Omit<HeroSlide, 'id'>) => {
+    const newSlides = [...settings.heroSlides, { ...slide, id: `slide-${Date.now()}` }];
+    const newSettings = { ...settings, heroSlides: newSlides };
+    setSettings(newSettings);
+    if (isSupabaseConfigured) {
+      await updateStoreSettingsInDb({ hero_slides: newSlides });
+    }
+  };
 
-  const removeHeroSlide = (id: string) =>
-    setSettings((prev) => ({
-      ...prev,
-      heroSlides: prev.heroSlides.filter((s) => s.id !== id),
-    }));
+  const removeHeroSlide = async (id: string) => {
+    const newSlides = settings.heroSlides.filter((s) => s.id !== id);
+    const newSettings = { ...settings, heroSlides: newSlides };
+    setSettings(newSettings);
+    if (isSupabaseConfigured) {
+      await updateStoreSettingsInDb({ hero_slides: newSlides });
+    }
+  };
 
   return (
     <AppContext.Provider
