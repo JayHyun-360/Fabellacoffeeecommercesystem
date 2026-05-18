@@ -2,7 +2,7 @@
 -- FABELLA COFFEE — Supabase Schema
 -- =============================================================================
 -- CIRCUIT BREAKER RULE: RLS policies MUST use JWT metadata for role checks.
---   CORRECT:   (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+--   CORRECT:   (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
 --   FORBIDDEN: EXISTS (SELECT 1 FROM public.profiles WHERE ...)
 --   Reason: Querying profiles inside RLS causes infinite recursion → 5-second hangs.
 -- =============================================================================
@@ -37,11 +37,11 @@ CREATE POLICY "profiles: select own" ON public.profiles
 
 -- Admins can read all profiles — JWT role check (Circuit Breaker)
 CREATE POLICY "profiles: admin select all" ON public.profiles
-  FOR SELECT USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+  FOR SELECT USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- Admins can update any profile's role
 CREATE POLICY "profiles: admin update role" ON public.profiles
-  FOR UPDATE USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+  FOR UPDATE USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- Users can update their own non-role fields
 CREATE POLICY "profiles: update own" ON public.profiles
@@ -56,8 +56,8 @@ RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public AS $$
 BEGIN
   UPDATE auth.users
-  SET raw_user_meta_data =
-    COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('role', NEW.role)
+  SET raw_app_meta_data =
+    COALESCE(raw_app_meta_data, '{}'::jsonb) || jsonb_build_object('role', NEW.role)
   WHERE id = NEW.id;
   RETURN NEW;
 END;
@@ -111,12 +111,12 @@ CREATE POLICY "products: public read" ON public.products
 -- Staff and admins can read all products (including unavailable)
 CREATE POLICY "products: staff read all" ON public.products
   FOR SELECT USING (
-    (auth.jwt() -> 'user_metadata' ->> 'role') IN ('staff', 'admin')
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN ('staff', 'admin')
   );
 
 -- Only admins can insert/update/delete products
 CREATE POLICY "products: admin write" ON public.products
-  FOR ALL USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+  FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- ─── Orders ───────────────────────────────────────────────────────────────────
 CREATE TABLE public.orders (
@@ -145,7 +145,7 @@ CREATE POLICY "orders: customer select own" ON public.orders
 -- Staff and admins can view all orders — JWT role check (Circuit Breaker)
 CREATE POLICY "orders: staff select all" ON public.orders
   FOR SELECT USING (
-    (auth.jwt() -> 'user_metadata' ->> 'role') IN ('staff', 'admin')
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN ('staff', 'admin')
   );
 
 -- Anyone can place an order (guest or authenticated)
@@ -155,7 +155,7 @@ CREATE POLICY "orders: insert" ON public.orders
 -- Staff and admins can update order status
 CREATE POLICY "orders: staff update status" ON public.orders
   FOR UPDATE USING (
-    (auth.jwt() -> 'user_metadata' ->> 'role') IN ('staff', 'admin')
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN ('staff', 'admin')
   );
 
 -- ─── Order Items ──────────────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ CREATE POLICY "order_items: customer select own" ON public.order_items
 
 CREATE POLICY "order_items: staff select all" ON public.order_items
   FOR SELECT USING (
-    (auth.jwt() -> 'user_metadata' ->> 'role') IN ('staff', 'admin')
+    (auth.jwt() -> 'app_metadata' ->> 'role') IN ('staff', 'admin')
   );
 
 CREATE POLICY "order_items: insert" ON public.order_items
@@ -209,9 +209,9 @@ ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "store_settings: public read" ON public.store_settings
   FOR SELECT USING (TRUE);
 
--- Only authenticated users (Admins/Staff) can update store settings
-CREATE POLICY "store_settings: auth write" ON public.store_settings
-  FOR ALL TO authenticated USING (TRUE) WITH CHECK (TRUE);
+-- Only admins and staff can update store settings
+CREATE POLICY "store_settings: staff write" ON public.store_settings
+  FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'staff'));
 
 -- ─── Seed: Initial store settings row ─────────────────────────────────────────
 INSERT INTO public.store_settings (store_name, weekday_hours, weekend_hours, address)
@@ -256,11 +256,20 @@ CREATE POLICY "product_images: public read" ON storage.objects
   FOR SELECT USING (bucket_id = 'product-images');
 
 -- Admins and staff can upload, update, and delete images
-CREATE POLICY "product_images: auth insert" ON storage.objects
-  FOR INSERT TO authenticated WITH CHECK (bucket_id = 'product-images');
+CREATE POLICY "product_images: staff insert" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'product-images' 
+    AND (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'staff')
+  );
 
-CREATE POLICY "product_images: auth update" ON storage.objects
-  FOR UPDATE TO authenticated USING (bucket_id = 'product-images');
+CREATE POLICY "product_images: staff update" ON storage.objects
+  FOR UPDATE USING (
+    bucket_id = 'product-images' 
+    AND (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'staff')
+  );
 
-CREATE POLICY "product_images: auth delete" ON storage.objects
-  FOR DELETE TO authenticated USING (bucket_id = 'product-images');
+CREATE POLICY "product_images: staff delete" ON storage.objects
+  FOR DELETE USING (
+    bucket_id = 'product-images' 
+    AND (auth.jwt() -> 'app_metadata' ->> 'role') IN ('admin', 'staff')
+  );
