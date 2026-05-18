@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Search, X, Plus, Package } from 'lucide-react';
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   description: string;
   price: number;
@@ -28,7 +28,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 export function SearchModal({ isOpen, onClose, products, onAddToCart }: SearchModalProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const [added, setAdded] = useState<Set<number>>(new Set());
+  const [added, setAdded] = useState<Set<string>>(new Set());
 
   const filtered = query.trim().length > 0
     ? products.filter((p) =>

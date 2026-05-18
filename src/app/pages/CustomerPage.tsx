@@ -41,7 +41,7 @@ export function CustomerPage() {
     });
   };
 
-  const updateQuantity = (id: number, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number) => {
     if (quantity === 0) {
       removeFromCart(id);
       return;
@@ -49,7 +49,7 @@ export function CustomerPage() {
     setCartItems((items) => items.map((item) => (item.id === id ? { ...item, quantity } : item)));
   };
 
-  const removeFromCart = (id: number) => {
+  const removeFromCart = (id: string) => {
     setCartItems((items) => items.filter((item) => item.id !== id));
   };
 

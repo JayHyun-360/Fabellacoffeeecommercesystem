@@ -4,7 +4,7 @@ import { useState } from 'react';
 export interface SavedOrder {
   orderNumber: string;
   date: string;
-  items: { id: number; name: string; price: number; quantity: number; image?: string }[];
+  items: { id: string; name: string; price: number; quantity: number; image?: string }[];
   subtotal: number;
   deliveryFee: number;
   total: number;
