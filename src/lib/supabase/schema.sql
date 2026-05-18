@@ -2,7 +2,7 @@
 -- FABELLA COFFEE — Supabase Schema
 -- =============================================================================
 -- CIRCUIT BREAKER RULE: RLS policies MUST use JWT metadata for role checks.
---   CORRECT:   (auth.jwt() ->> 'role') = 'admin'
+--   CORRECT:   (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
 --   FORBIDDEN: EXISTS (SELECT 1 FROM public.profiles WHERE ...)
 --   Reason: Querying profiles inside RLS causes infinite recursion → 5-second hangs.
 -- =============================================================================
@@ -37,11 +37,11 @@ CREATE POLICY "profiles: select own" ON public.profiles
 
 -- Admins can read all profiles — JWT role check (Circuit Breaker)
 CREATE POLICY "profiles: admin select all" ON public.profiles
-  FOR SELECT USING ((auth.jwt() ->> 'role') = 'admin');
+  FOR SELECT USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- Admins can update any profile's role
 CREATE POLICY "profiles: admin update role" ON public.profiles
-  FOR UPDATE USING ((auth.jwt() ->> 'role') = 'admin');
+  FOR UPDATE USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- Users can update their own non-role fields
 CREATE POLICY "profiles: update own" ON public.profiles
@@ -111,12 +111,12 @@ CREATE POLICY "products: public read" ON public.products
 -- Staff and admins can read all products (including unavailable)
 CREATE POLICY "products: staff read all" ON public.products
   FOR SELECT USING (
-    (auth.jwt() ->> 'role') IN ('staff', 'admin')
+    (auth.jwt() -> 'user_metadata' ->> 'role') IN ('staff', 'admin')
   );
 
 -- Only admins can insert/update/delete products
 CREATE POLICY "products: admin write" ON public.products
-  FOR ALL USING ((auth.jwt() ->> 'role') = 'admin');
+  FOR ALL USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
 
 -- ─── Orders ───────────────────────────────────────────────────────────────────
 CREATE TABLE public.orders (
@@ -145,7 +145,7 @@ CREATE POLICY "orders: customer select own" ON public.orders
 -- Staff and admins can view all orders — JWT role check (Circuit Breaker)
 CREATE POLICY "orders: staff select all" ON public.orders
   FOR SELECT USING (
-    (auth.jwt() ->> 'role') IN ('staff', 'admin')
+    (auth.jwt() -> 'user_metadata' ->> 'role') IN ('staff', 'admin')
   );
 
 -- Anyone can place an order (guest or authenticated)
@@ -155,7 +155,7 @@ CREATE POLICY "orders: insert" ON public.orders
 -- Staff and admins can update order status
 CREATE POLICY "orders: staff update status" ON public.orders
   FOR UPDATE USING (
-    (auth.jwt() ->> 'role') IN ('staff', 'admin')
+    (auth.jwt() -> 'user_metadata' ->> 'role') IN ('staff', 'admin')
   );
 
 -- ─── Order Items ──────────────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ CREATE POLICY "order_items: customer select own" ON public.order_items
 
 CREATE POLICY "order_items: staff select all" ON public.order_items
   FOR SELECT USING (
-    (auth.jwt() ->> 'role') IN ('staff', 'admin')
+    (auth.jwt() -> 'user_metadata' ->> 'role') IN ('staff', 'admin')
   );
 
 CREATE POLICY "order_items: insert" ON public.order_items
