@@ -364,7 +364,7 @@ export function StaffPage() {
               className="flex items-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-full text-sm transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back to Store</span>
+              <span className="hidden sm:inline">Customer View</span>
             </button>
           </div>
         </div>

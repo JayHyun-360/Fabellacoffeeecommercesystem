@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { X, ChevronRight, ChevronLeft, MapPin, Phone, Mail, User, Check, Package, Truck, CreditCard, Smartphone, Banknote, Store, UtensilsCrossed, ShoppingBag } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, MapPin, Phone, Mail, User, Check, Package, Truck, CreditCard, Smartphone, Banknote, Store, UtensilsCrossed, ShoppingBag, LogIn } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import type { SavedOrder } from './OrderHistory';
 
 interface CartItem {
@@ -534,7 +535,9 @@ function generateOrderNumber() {
 }
 
 export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutProps) {
+  const { user, loginWithGoogle, loginAnonymously, isAnonymous } = useAuth();
   const [step, setStep] = useState(0);
+  const [signingIn, setSigningIn] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [details, setDetails] = useState<OrderDetails>({
     name: '',
@@ -602,6 +605,62 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
   };
 
   if (!isOpen) return null;
+
+  // Auth gate: if user is not signed in, show sign-in options
+  if (!user) {
+    return (
+      <>
+        <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white z-50 shadow-2xl flex flex-col rounded-l-3xl">
+          <div className="p-6 flex justify-between items-center border-b border-gray-100">
+            <div>
+              <h2 className="text-xl">Checkout</h2>
+              <p className="text-sm text-gray-400 mt-0.5">Sign in to continue</p>
+            </div>
+            <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 flex flex-col items-center justify-center px-8 space-y-6">
+            <div className="w-20 h-20 rounded-3xl bg-gray-100 flex items-center justify-center">
+              <LogIn className="w-9 h-9 text-gray-400" />
+            </div>
+            <div className="text-center">
+              <p className="text-lg">How would you like to order?</p>
+              <p className="text-sm text-gray-400 mt-1">Choose an option to proceed with checkout</p>
+            </div>
+
+            <div className="w-full space-y-3">
+              <button
+                disabled={signingIn}
+                onClick={async () => {
+                  setSigningIn(true);
+                  try { await loginAnonymously(); } finally { setSigningIn(false); }
+                }}
+                className="w-full py-3.5 bg-black text-white rounded-2xl text-sm hover:bg-black/80 transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                Continue as Guest
+              </button>
+              <button
+                disabled={signingIn}
+                onClick={() => loginWithGoogle()}
+                className="w-full py-3.5 border-2 border-gray-200 rounded-2xl text-sm hover:border-black transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign in with Google
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-400 text-center max-w-xs">
+              Guest orders are quick and easy. Sign in with Google to save your order history.
+            </p>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   const stepTitles = ['Review Order', 'Order Details', 'Payment', 'Order Confirmed'];
 

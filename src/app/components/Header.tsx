@@ -1,7 +1,8 @@
-import { ShoppingCart, Menu, X, Search, History, Users2, Coffee, ShieldCheck, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Menu, X, Search, History, Users2, Coffee, ShieldCheck, ChevronRight, LogIn, LogOut, User } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
+import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
   cartCount: number;
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }: HeaderProps) {
   const router = useRouter();
+  const { user, isAdmin, isStaff, isAnonymous, loginWithGoogle, linkGoogle, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
   const accessRef = useRef<HTMLDivElement>(null);
@@ -75,55 +77,116 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
             )}
           </button>
 
-          {/* Access Switcher */}
+          {/* Auth / Access Switcher */}
           <div className="relative" ref={accessRef}>
             <button
               onClick={() => setAccessOpen(!accessOpen)}
-              title="Switch Portal"
-              className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${
-                accessOpen ? 'bg-black text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+              title={user ? (user.user_metadata?.full_name ?? user.email ?? 'Account') : 'Sign In'}
+              className={`w-9 h-9 flex items-center justify-center rounded-full transition-all overflow-hidden ${
+                accessOpen ? 'bg-black text-white ring-2 ring-black/20' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
               }`}
             >
-              <Users2 className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+              {user?.user_metadata?.avatar_url ? (
+                <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : user && !isAnonymous ? (
+                <User className="w-[18px] h-[18px]" />
+              ) : (
+                <Users2 className="w-[18px] h-[18px]" />
+              )}
             </button>
 
             {accessOpen && (
-              <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
-                <div className="px-4 pt-4 pb-2">
-                  <p className="text-xs text-gray-400 uppercase tracking-widest">Choose Access</p>
-                </div>
+              <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                {/* User info */}
+                {user && !isAnonymous ? (
+                  <div className="px-4 pt-4 pb-3 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      {user.user_metadata?.avatar_url ? (
+                        <img src={user.user_metadata.avatar_url} alt="" className="w-10 h-10 rounded-full" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          <User className="w-5 h-5 text-gray-500" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm truncate">{user.user_metadata?.full_name ?? 'User'}</p>
+                        <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : user && isAnonymous ? (
+                  <div className="px-4 pt-4 pb-3 border-b border-gray-100">
+                    <p className="text-sm text-gray-600">Browsing as Guest</p>
+                    <button
+                      onClick={() => { linkGoogle(); setAccessOpen(false); }}
+                      className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm hover:bg-blue-100 transition-colors"
+                    >
+                      <LogIn className="w-4 h-4" />Link Google Account
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-4 border-b border-gray-100">
+                    <button
+                      onClick={() => { loginWithGoogle(); setAccessOpen(false); }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-black text-white rounded-xl text-sm hover:bg-black/80 transition-colors"
+                    >
+                      <LogIn className="w-4 h-4" />Sign in with Google
+                    </button>
+                  </div>
+                )}
 
-                <div className="p-2 space-y-1">
-                  <button
-                    onClick={() => { router.push('/staff'); setAccessOpen(false); }}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group text-left"
-                  >
-                    <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Coffee className="w-4 h-4 text-blue-600" />
+                {/* Portal links — role-gated */}
+                {(isStaff || isAdmin) && (
+                  <div className="p-2 space-y-1">
+                    <div className="px-2 pt-2 pb-1">
+                      <p className="text-xs text-gray-400 uppercase tracking-widest">Portals</p>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm">Staff Portal</p>
-                      <p className="text-xs text-gray-400">Track orders & deliveries</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
-                  </button>
+                    {isStaff && (
+                      <button
+                        onClick={() => { router.push('/staff'); setAccessOpen(false); }}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group text-left"
+                      >
+                        <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Coffee className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm">Staff Portal</p>
+                          <p className="text-xs text-gray-400">Track orders & deliveries</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        onClick={() => { router.push('/admin'); setAccessOpen(false); }}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group text-left"
+                      >
+                        <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <ShieldCheck className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm">Admin Panel</p>
+                          <p className="text-xs text-gray-400">Manage store & settings</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                      </button>
+                    )}
+                  </div>
+                )}
 
-                  <button
-                    onClick={() => { router.push('/admin'); setAccessOpen(false); }}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group text-left"
-                  >
-                    <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <ShieldCheck className="w-4 h-4 text-purple-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm">Admin Panel</p>
-                      <p className="text-xs text-gray-400">Manage store & settings</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
-                  </button>
-                </div>
+                {/* Sign out */}
+                {user && (
+                  <div className="p-2 border-t border-gray-100">
+                    <button
+                      onClick={() => { logout(); setAccessOpen(false); }}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 transition-colors text-red-600 text-sm"
+                    >
+                      <LogOut className="w-4 h-4" />Sign Out
+                    </button>
+                  </div>
+                )}
 
-                <div className="px-4 py-3 border-t border-gray-50 bg-gray-50/50">
+                <div className="px-4 py-2.5 border-t border-gray-50 bg-gray-50/50">
                   <p className="text-xs text-gray-400 text-center">Currently viewing: Customer Store</p>
                 </div>
               </div>
@@ -158,17 +221,44 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
               )}
             </button>
 
-            <div className="border-t border-gray-100 pt-2 mt-1">
-              <p className="text-xs text-gray-400 mb-2 px-1">Switch Portal</p>
-              <button onClick={() => { router.push('/staff'); setMobileMenuOpen(false); }}
+            {/* Auth actions (mobile) */}
+            {!user ? (
+              <button onClick={() => { loginWithGoogle(); setMobileMenuOpen(false); }}
                 className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity">
-                <Coffee className="w-5 h-5 text-blue-500" /><span className="text-sm">Staff Portal</span>
+                <LogIn className="w-5 h-5" /><span className="text-sm">Sign in with Google</span>
               </button>
-              <button onClick={() => { router.push('/admin'); setMobileMenuOpen(false); }}
-                className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity">
-                <ShieldCheck className="w-5 h-5 text-purple-500" /><span className="text-sm">Admin Panel</span>
+            ) : isAnonymous ? (
+              <button onClick={() => { linkGoogle(); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity text-blue-600">
+                <LogIn className="w-5 h-5" /><span className="text-sm">Link Google Account</span>
               </button>
-            </div>
+            ) : null}
+
+            {/* Portal links (mobile) — role-gated */}
+            {(isStaff || isAdmin) && (
+              <div className="border-t border-gray-100 pt-2 mt-1">
+                <p className="text-xs text-gray-400 mb-2 px-1">Switch Portal</p>
+                {isStaff && (
+                  <button onClick={() => { router.push('/staff'); setMobileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity">
+                    <Coffee className="w-5 h-5 text-blue-500" /><span className="text-sm">Staff Portal</span>
+                  </button>
+                )}
+                {isAdmin && (
+                  <button onClick={() => { router.push('/admin'); setMobileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity">
+                    <ShieldCheck className="w-5 h-5 text-purple-500" /><span className="text-sm">Admin Panel</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {user && (
+              <button onClick={() => { logout(); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity text-red-600">
+                <LogOut className="w-5 h-5" /><span className="text-sm">Sign Out</span>
+              </button>
+            )}
           </div>
         </nav>
       )}
