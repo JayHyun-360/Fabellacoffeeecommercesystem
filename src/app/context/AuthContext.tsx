@@ -1,3 +1,5 @@
+'use client';
+
 import {
   createContext,
   useContext,
@@ -7,14 +9,14 @@ import {
   type ReactNode,
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase/client';
 import {
   getRoleFromSession,
   signInWithGoogle,
   signInWithGitHub,
   signOut as _signOut,
-} from '@/lib/supabase/auth';
-import type { AppRole } from '@/lib/supabase/database.types';
+} from '../../lib/supabase/auth';
+import type { AppRole } from '../../lib/supabase/database.types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
