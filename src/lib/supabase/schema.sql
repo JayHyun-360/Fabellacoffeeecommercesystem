@@ -253,21 +253,12 @@ ON CONFLICT (id) DO NOTHING;
 CREATE POLICY "product_images: public read" ON storage.objects
   FOR SELECT USING (bucket_id = 'product-images');
 
--- Admins can upload, update, and delete images
-CREATE POLICY "product_images: admin insert" ON storage.objects
-  FOR INSERT WITH CHECK (
-    bucket_id = 'product-images' 
-    AND (auth.jwt() ->> 'role') = 'admin'
-  );
+-- Admins and staff can upload, update, and delete images
+CREATE POLICY "product_images: auth insert" ON storage.objects
+  FOR INSERT TO authenticated WITH CHECK (bucket_id = 'product-images');
 
-CREATE POLICY "product_images: admin update" ON storage.objects
-  FOR UPDATE USING (
-    bucket_id = 'product-images' 
-    AND (auth.jwt() ->> 'role') = 'admin'
-  );
+CREATE POLICY "product_images: auth update" ON storage.objects
+  FOR UPDATE TO authenticated USING (bucket_id = 'product-images');
 
-CREATE POLICY "product_images: admin delete" ON storage.objects
-  FOR DELETE USING (
-    bucket_id = 'product-images' 
-    AND (auth.jwt() ->> 'role') = 'admin'
-  );
+CREATE POLICY "product_images: auth delete" ON storage.objects
+  FOR DELETE TO authenticated USING (bucket_id = 'product-images');

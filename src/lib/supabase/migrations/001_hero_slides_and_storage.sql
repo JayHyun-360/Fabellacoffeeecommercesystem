@@ -12,26 +12,22 @@ ON CONFLICT (id) DO NOTHING;
 CREATE POLICY "product_images: public read" ON storage.objects
   FOR SELECT USING (bucket_id = 'product-images');
 
--- 3. Admins can upload images (Insert)
-CREATE POLICY "product_images: admin insert" ON storage.objects
-  FOR INSERT WITH CHECK (
-    bucket_id = 'product-images' 
-    AND (auth.jwt() ->> 'role') = 'admin'
-  );
+-- Drop the restrictive policies just in case they were already created
+DROP POLICY IF EXISTS "product_images: admin insert" ON storage.objects;
+DROP POLICY IF EXISTS "product_images: admin update" ON storage.objects;
+DROP POLICY IF EXISTS "product_images: admin delete" ON storage.objects;
 
--- 4. Admins can update images
-CREATE POLICY "product_images: admin update" ON storage.objects
-  FOR UPDATE USING (
-    bucket_id = 'product-images' 
-    AND (auth.jwt() ->> 'role') = 'admin'
-  );
+-- 3. Authenticated users can upload images (Insert)
+CREATE POLICY "product_images: auth insert" ON storage.objects
+  FOR INSERT TO authenticated WITH CHECK (bucket_id = 'product-images');
 
--- 5. Admins can delete images
-CREATE POLICY "product_images: admin delete" ON storage.objects
-  FOR DELETE USING (
-    bucket_id = 'product-images' 
-    AND (auth.jwt() ->> 'role') = 'admin'
-  );
+-- 4. Authenticated users can update images
+CREATE POLICY "product_images: auth update" ON storage.objects
+  FOR UPDATE TO authenticated USING (bucket_id = 'product-images');
+
+-- 5. Authenticated users can delete images
+CREATE POLICY "product_images: auth delete" ON storage.objects
+  FOR DELETE TO authenticated USING (bucket_id = 'product-images');
 
 -- 6. (Optional) Reset the hero slides to an empty array so you can add fresh image uploads
 -- UPDATE public.store_settings
