@@ -96,7 +96,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
 
   const orderItems = items.map((item) => ({
     order_id: order.id,
-    product_id: item.product_id,
+    product_id: item.product_id || null,
     product_name: item.product_name,
     product_price: item.product_price,
     quantity: item.quantity,
@@ -104,7 +104,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
 
   const { error: itemsError } = await supabase
     .from('order_items')
-    .insert(orderItems);
+    .insert(orderItems as any);
 
   if (itemsError) throw itemsError;
 

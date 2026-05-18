@@ -110,7 +110,7 @@ export interface Database {
       };
       order_items: {
         Row: OrderItem;
-        Insert: Omit<OrderItem, 'id'>;
+        Insert: Omit<OrderItem, 'id' | 'subtotal'>;
         Update: Partial<Omit<OrderItem, 'id' | 'order_id'>>;
       };
       store_settings: {
