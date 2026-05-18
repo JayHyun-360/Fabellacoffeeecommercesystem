@@ -241,3 +241,33 @@ CREATE TRIGGER set_orders_updated_at
 CREATE TRIGGER set_store_settings_updated_at
   BEFORE UPDATE ON public.store_settings
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- ─── Storage (product-images bucket) ──────────────────────────────────────────
+-- Create the bucket (requires Supabase superuser, typically done via Dashboard, but included for completeness)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Policies for the product-images bucket
+-- Anyone can view images
+CREATE POLICY "product_images: public read" ON storage.objects
+  FOR SELECT USING (bucket_id = 'product-images');
+
+-- Admins can upload, update, and delete images
+CREATE POLICY "product_images: admin insert" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'product-images' 
+    AND (auth.jwt() ->> 'role') = 'admin'
+  );
+
+CREATE POLICY "product_images: admin update" ON storage.objects
+  FOR UPDATE USING (
+    bucket_id = 'product-images' 
+    AND (auth.jwt() ->> 'role') = 'admin'
+  );
+
+CREATE POLICY "product_images: admin delete" ON storage.objects
+  FOR DELETE USING (
+    bucket_id = 'product-images' 
+    AND (auth.jwt() ->> 'role') = 'admin'
+  );
