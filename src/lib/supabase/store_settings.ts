@@ -33,7 +33,7 @@ export async function updateStoreSettingsInDb(updates: Partial<Omit<StoreSetting
     .single();
 
   if (existing) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('store_settings')
       .update(updates)
       .eq('id', existing.id)
@@ -43,9 +43,9 @@ export async function updateStoreSettingsInDb(updates: Partial<Omit<StoreSetting
     return data as StoreSettings;
   } else {
     // If no row exists, insert one
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('store_settings')
-      .insert(updates as any)
+      .insert(updates)
       .select()
       .single();
     if (error) throw error;
