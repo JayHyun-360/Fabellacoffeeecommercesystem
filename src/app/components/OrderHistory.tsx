@@ -2,6 +2,7 @@ import { X, Package, Truck, Store, ChevronDown, ChevronUp, Clock, Receipt, XCirc
 import { useState } from 'react';
 
 export interface SavedOrder {
+  id?: string;
   orderNumber: string;
   date: string;
   items: { id: string; name: string; price: number; quantity: number; image?: string }[];

@@ -94,6 +94,7 @@ interface AppContextType {
   deleteProduct: (id: string) => Promise<void>;
   toggleProductAvailability: (id: string) => Promise<void>;
   refreshProducts: () => Promise<void>;
+  refreshOrders: () => Promise<void>;
   updateSettings: (updates: Partial<StoreSettings>) => Promise<void>;
   updateHeroSlide: (id: string, updates: Partial<HeroSlide>) => Promise<void>;
   addHeroSlide: (slide: Omit<HeroSlide, 'id'>) => Promise<void>;
@@ -155,10 +156,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshOrders = useCallback(async () => {
+    if (!isSupabaseConfigured) return;
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const mappedOrders: SavedOrder[] = data.map((order: any) => {
+          const items = order.order_items || [];
+          return {
+            id: order.id,
+            orderNumber: `Q-${order.queue_number.toString().padStart(4, '0')}`,
+            date: new Date(order.created_at).toLocaleDateString(),
+            items: items.map((i: any) => ({
+              id: i.product_id || '',
+              name: i.product_name,
+              price: Number(i.product_price),
+              quantity: i.quantity,
+            })),
+            subtotal: items.reduce((sum: number, i: any) => sum + Number(i.product_price) * i.quantity, 0),
+            deliveryFee: order.order_type === 'delivery' ? 50 : 0,
+            total: Number(order.total),
+            deliveryType: order.order_type,
+            paymentMethod: order.payment_method,
+            name: order.customer_name,
+            address: order.delivery_address || undefined,
+            city: '',
+            status: order.status === 'completed' ? 'received' : order.status,
+          };
+        });
+        setOrders(mappedOrders);
+      }
+    } catch (err) {
+      console.error('Failed to load orders from Supabase:', err);
+    }
+  }, []);
+
   useEffect(() => {
     refreshProducts();
     refreshSettings();
-  }, [refreshProducts, refreshSettings]);
+    refreshOrders();
+  }, [refreshProducts, refreshSettings, refreshOrders]);
 
   const addOrder = async (order: SavedOrder) => {
     // Optimistic UI update
@@ -195,8 +239,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateOrderStatus = (orderNumber: string, status: SavedOrder['status']) =>
+  const updateOrderStatus = async (orderNumber: string, status: SavedOrder['status']) => {
+    // Optimistic UI update
     setOrders((prev) => prev.map((o) => (o.orderNumber === orderNumber ? { ...o, status } : o)));
+
+    if (isSupabaseConfigured) {
+      try {
+        const supabase = createClient();
+        
+        // Find the order to get its DB UUID
+        const orderToUpdate = orders.find(o => o.orderNumber === orderNumber);
+        if (!orderToUpdate || !orderToUpdate.id) return;
+        
+        // Map frontend status back to DB status
+        const dbStatus = status === 'received' ? 'completed' : status;
+        
+        const { updateOrderStatus: updateOrderStatusInDb } = await import('../../lib/services/orders');
+        await updateOrderStatusInDb(orderToUpdate.id, dbStatus as any);
+      } catch (err) {
+        console.error('Failed to sync status update to Supabase:', err);
+      }
+    }
+  };
 
   const addProduct = async (product: Omit<Product, 'id'>) => {
     if (isSupabaseConfigured) {
@@ -351,7 +415,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       value={{
         products, orders, settings, productsLoading,
         addOrder, updateOrderStatus,
-        addProduct, updateProduct, deleteProduct, toggleProductAvailability, refreshProducts,
+        addProduct, updateProduct, deleteProduct, toggleProductAvailability, refreshProducts, refreshOrders,
         updateSettings, updateHeroSlide, addHeroSlide, removeHeroSlide,
       }}
     >
