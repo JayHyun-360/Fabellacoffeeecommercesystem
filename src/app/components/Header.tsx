@@ -16,18 +16,6 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
   const { user, isAdmin, isStaff, isAnonymous, loginWithGoogle, linkGoogle, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
-  const accessRef = useRef<HTMLDivElement>(null);
-
-  // Close access popover when clicking outside
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (accessRef.current && !accessRef.current.contains(e.target as Node)) {
-        setAccessOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   return (
     <>
@@ -81,7 +69,7 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
           )}
 
           {/* Auth / Access Switcher */}
-          <div className="relative" ref={accessRef}>
+          <div className="relative">
             <button
               onClick={() => setAccessOpen(!accessOpen)}
               title={user ? (user.user_metadata?.full_name ?? user.email ?? 'Account') : 'Sign In'}
