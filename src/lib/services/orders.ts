@@ -73,7 +73,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     0
   );
 
-  const { data: order, error: orderError } = await supabase
+  const { data, error: orderError } = await supabase
     .from('orders')
     .insert({
       customer_name: payload.customer_name,
@@ -92,6 +92,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     .single();
 
   if (orderError) throw orderError;
+  const order = data as Order;
 
   const orderItems = items.map((item) => ({
     order_id: order.id,
