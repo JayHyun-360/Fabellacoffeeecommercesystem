@@ -117,7 +117,7 @@ export async function updateOrderStatus(
 ): Promise<void> {
   const { error } = await supabase
     .from('orders')
-    .update({ status })
+    .update({ status } as any)
     .eq('id', orderId);
 
   if (error) throw error;
