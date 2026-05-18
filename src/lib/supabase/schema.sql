@@ -20,9 +20,10 @@ CREATE TYPE public.payment_method  AS ENUM ('cod', 'gcash', 'card');
 -- ─── Profiles ─────────────────────────────────────────────────────────────────
 CREATE TABLE public.profiles (
   id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email       TEXT NOT NULL,
+  email       TEXT,
   full_name   TEXT,
   avatar_url  TEXT,
+  is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
   role        public.app_role NOT NULL DEFAULT 'customer',
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -71,13 +72,14 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name, avatar_url, role)
+  INSERT INTO public.profiles (id, email, full_name, avatar_url, role, is_anonymous)
   VALUES (
     NEW.id,
     NEW.email,
     NEW.raw_user_meta_data ->> 'full_name',
     NEW.raw_user_meta_data ->> 'avatar_url',
-    'customer'
+    'customer',
+    COALESCE(NEW.is_anonymous, FALSE)
   );
   RETURN NEW;
 END;
