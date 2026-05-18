@@ -46,6 +46,7 @@ export interface StoreSettings {
   weekdayHours: string;
   weekendHours: string;
   announcement: string;
+  deliveryFee: number;
 }
 
 const INITIAL_PRODUCTS: Product[] = [
@@ -80,6 +81,7 @@ const INITIAL_SETTINGS: StoreSettings = {
   weekdayHours: '6am - 10pm',
   weekendHours: '7am - 11pm',
   announcement: '',
+  deliveryFee: 49,
 };
 
 interface AppContextType {
@@ -149,6 +151,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           weekdayHours: dbSettings.weekday_hours,
           weekendHours: dbSettings.weekend_hours,
           announcement: dbSettings.announcement || '',
+          deliveryFee: Number(dbSettings.delivery_fee) || 49,
         });
       }
     } catch (err) {
@@ -376,7 +379,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           weekend_hours: newSettings.weekendHours,
           announcement: newSettings.announcement,
           hero_slides: newSettings.heroSlides,
-        });
+          delivery_fee: newSettings.deliveryFee,
+        } as any);
       } catch (err) {
         console.error('Failed to save settings:', err);
       }

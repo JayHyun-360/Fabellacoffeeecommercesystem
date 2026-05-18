@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, ChevronRight, ChevronLeft, MapPin, Phone, Mail, User, Check, Package, Truck, CreditCard, Smartphone, Banknote, Store, UtensilsCrossed, ShoppingBag, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
 import type { SavedOrder } from './OrderHistory';
 
 interface CartItem {
@@ -32,7 +33,6 @@ interface OrderDetails {
   paymentMethod: PaymentMethod;
 }
 
-const DELIVERY_FEE = 49;
 const STEPS = ['Review Order', 'Order Details', 'Payment', 'Confirmation'];
 
 const DELIVERY_OPTIONS: { value: DeliveryType; label: string; icon: React.ReactNode; desc: string }[] = [
@@ -93,8 +93,9 @@ function OrderReview({ items, deliveryType, onNext, onBack }: {
   onNext: () => void;
   onBack: () => void;
 }) {
+  const { settings } = useApp();
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = deliveryType === 'delivery' ? DELIVERY_FEE : 0;
+  const deliveryFee = deliveryType === 'delivery' ? (settings.deliveryFee ?? 49) : 0;
   const total = subtotal + deliveryFee;
 
   return (
@@ -130,7 +131,7 @@ function OrderReview({ items, deliveryType, onNext, onBack }: {
           <span>
             {deliveryType !== 'delivery'
               ? <span className="text-green-600">Free</span>
-              : `₱${DELIVERY_FEE}`}
+              : `₱${settings.deliveryFee ?? 49}`}
           </span>
         </div>
         <div className="flex justify-between text-lg border-t border-gray-100 pt-3">
@@ -309,8 +310,9 @@ function PaymentStep({ details, items, onChange, onNext, onBack }: {
   onNext: () => void;
   onBack: () => void;
 }) {
+  const { settings } = useApp();
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = details.deliveryType === 'delivery' ? DELIVERY_FEE : 0;
+  const deliveryFee = details.deliveryType === 'delivery' ? (settings.deliveryFee ?? 49) : 0;
   const total = subtotal + deliveryFee;
 
   const codDesc =
@@ -408,7 +410,7 @@ function PaymentStep({ details, items, onChange, onNext, onBack }: {
             <span>
               {details.deliveryType !== 'delivery'
                 ? <span className="text-green-600">Free</span>
-                : `₱${DELIVERY_FEE}`}
+                : `₱${settings.deliveryFee ?? 49}`}
             </span>
           </div>
           <div className="flex justify-between pt-2 border-t border-gray-200">
@@ -444,8 +446,9 @@ function OrderConfirmation({ details, items, orderNumber, onClose }: {
   orderNumber: string;
   onClose: () => void;
 }) {
+  const { settings } = useApp();
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = details.deliveryType === 'delivery' ? DELIVERY_FEE : 0;
+  const deliveryFee = details.deliveryType === 'delivery' ? (settings.deliveryFee ?? 49) : 0;
   const total = subtotal + deliveryFee;
 
   const paymentLabels: Record<PaymentMethod, string> = {
@@ -559,10 +562,11 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
     setStep(3);
   };
 
+  const { settings } = useApp();
   const handleClose = () => {
     if (step === 3) {
       const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const deliveryFee = details.deliveryType === 'delivery' ? DELIVERY_FEE : 0;
+      const deliveryFee = details.deliveryType === 'delivery' ? (settings.deliveryFee ?? 49) : 0;
       const now = new Date();
       const dateStr = now.toLocaleDateString('en-PH', {
         month: 'short', day: 'numeric', year: 'numeric',

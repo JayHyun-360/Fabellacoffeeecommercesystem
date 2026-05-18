@@ -77,6 +77,7 @@ export interface StoreSettings {
   weekend_hours: string;
   announcement: string | null;
   hero_slides: HeroSlide[];
+  delivery_fee: number;
   updated_at: string;
 }
 

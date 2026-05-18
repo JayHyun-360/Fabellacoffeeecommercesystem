@@ -1428,6 +1428,7 @@ function StoreSettingsSection() {
       weekdayHours: info.weekdayHours,
       weekendHours: info.weekendHours,
       announcement: info.announcement,
+      deliveryFee: Number(info.deliveryFee) || 49,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -1548,14 +1549,18 @@ function StoreSettingsSection() {
             { label: 'Address', key: 'address', placeholder: 'Store address' },
             { label: 'Weekday Hours', key: 'weekdayHours', placeholder: '6am - 10pm' },
             { label: 'Weekend Hours', key: 'weekendHours', placeholder: '7am - 11pm' },
+            { label: 'Delivery Fee (₱)', key: 'deliveryFee', placeholder: '49' },
           ].map(({ label, key, placeholder }) => (
             <div key={key}>
               <label className="text-xs text-gray-400 mb-1.5 block">{label}</label>
               <input
                 type="text"
                 placeholder={placeholder}
-                value={(info as unknown as Record<string, string>)[key]}
-                onChange={(e) => setInfo({ ...info, [key]: e.target.value })}
+                value={((info as unknown as Record<string, string | number>)[key] ?? '').toString()}
+                onChange={(e) => {
+                  const val = key === 'deliveryFee' ? Number(e.target.value) || 0 : e.target.value;
+                  setInfo({ ...info, [key]: val });
+                }}
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black transition-colors"
               />
             </div>
