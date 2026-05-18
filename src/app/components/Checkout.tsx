@@ -159,18 +159,17 @@ function OrderReview({ items, deliveryType, onNext, onBack }: {
   );
 }
 
-function DeliveryDetails({ details, onChange, onNext, onBack }: {
+function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
   details: OrderDetails;
   onChange: (field: keyof OrderDetails, value: string) => void;
   onNext: () => void;
   onBack: () => void;
+  isAnonymous: boolean;
 }) {
   const needsAddress = details.deliveryType === 'delivery';
-  const isValid =
-    details.name.trim() &&
-    details.phone.trim() &&
-    details.email.trim() &&
-    (!needsAddress || details.address.trim());
+  const isValid = isAnonymous
+    ? (details.name.trim() && (!needsAddress || details.address.trim()))
+    : (details.name.trim() && details.phone.trim() && details.email.trim() && (!needsAddress || details.address.trim()));
 
   return (
     <div className="flex flex-col h-full">
@@ -231,7 +230,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack }: {
             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="tel"
-              placeholder="Phone Number *"
+              placeholder={isAnonymous ? "Phone Number (Optional)" : "Phone Number *"}
               value={details.phone}
               onChange={(e) => onChange('phone', e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black transition-colors"
@@ -242,7 +241,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack }: {
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="email"
-              placeholder="Email Address *"
+              placeholder={isAnonymous ? "Email Address (Optional)" : "Email Address *"}
               value={details.email}
               onChange={(e) => onChange('email', e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black transition-colors"
@@ -700,6 +699,7 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
               onChange={handleChange}
               onNext={() => setStep(2)}
               onBack={() => setStep(0)}
+              isAnonymous={isAnonymous}
             />
           )}
           {step === 2 && (
