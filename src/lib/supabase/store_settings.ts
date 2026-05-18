@@ -6,7 +6,7 @@ export async function fetchStoreSettingsFromDb(): Promise<StoreSettings | null> 
   const supabase = createClient();
   
   // We only expect one row in store_settings, so we limit to 1
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('store_settings')
     .select('*')
     .limit(1)
@@ -26,7 +26,7 @@ export async function updateStoreSettingsInDb(updates: Partial<Omit<StoreSetting
   const supabase = createClient();
   
   // Try to get the existing settings row ID first
-  const { data: existing } = await supabase
+  const { data: existing } = await (supabase as any)
     .from('store_settings')
     .select('id')
     .limit(1)
