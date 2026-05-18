@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
   cartCount: number;
-  onCartClick: () => void;
+  onCartClick?: () => void;
   onHistoryClick: () => void;
   onSearchClick: () => void;
 }
@@ -67,15 +67,17 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
             <History className="w-5 h-5" />
           </button>
 
-          {/* Cart — Hidden on mobile */}
-          <button onClick={onCartClick} className="hidden md:block relative hover:opacity-60 transition-opacity">
-            <ShoppingCart className="w-5 h-5" />
-            {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-black text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                {cartCount}
-              </span>
-            )}
-          </button>
+          {/* Cart — Hidden on mobile, hidden for admin preview */}
+          {onCartClick && (
+            <button onClick={onCartClick} className="hidden md:block relative hover:opacity-60 transition-opacity">
+              <ShoppingCart className="w-5 h-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-black text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Auth / Access Switcher */}
           <div className="relative" ref={accessRef}>
@@ -135,42 +137,45 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
                   </div>
                 )}
 
-                {/* Portal links — role-gated */}
-                {(isStaff || isAdmin) && (
+                {/* Portal links — only for staff and admin, hidden from customers */}
+                {isStaff && (
                   <div className="p-2 space-y-1">
                     <div className="px-2 pt-2 pb-1">
-                      <p className="text-xs text-gray-400 uppercase tracking-widest">Portals</p>
+                      <p className="text-xs text-gray-400 uppercase tracking-widest">Portal</p>
                     </div>
-                    {isStaff && (
-                      <button
-                        onClick={() => { router.push('/staff'); setAccessOpen(false); }}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group text-left"
-                      >
-                        <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <Coffee className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm">Staff Portal</p>
-                          <p className="text-xs text-gray-400">Track orders & deliveries</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
-                      </button>
-                    )}
-                    {isAdmin && (
-                      <button
-                        onClick={() => { router.push('/admin'); setAccessOpen(false); }}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group text-left"
-                      >
-                        <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <ShieldCheck className="w-4 h-4 text-purple-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm">Admin Panel</p>
-                          <p className="text-xs text-gray-400">Manage store & settings</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => { router.push('/staff'); setAccessOpen(false); }}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group text-left"
+                    >
+                      <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Coffee className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm">Staff Portal</p>
+                        <p className="text-xs text-gray-400">Track orders & deliveries</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                    </button>
+                  </div>
+                )}
+                {isAdmin && (
+                  <div className="p-2 space-y-1">
+                    <div className="px-2 pt-2 pb-1">
+                      <p className="text-xs text-gray-400 uppercase tracking-widest">Portal</p>
+                    </div>
+                    <button
+                      onClick={() => { router.push('/admin'); setAccessOpen(false); }}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group text-left"
+                    >
+                      <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <ShieldCheck className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm">Admin Panel</p>
+                        <p className="text-xs text-gray-400">Manage store & settings</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                    </button>
                   </div>
                 )}
 
@@ -213,13 +218,15 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
               <History className="w-5 h-5" /><span>Order History</span>
             </button>
 
-            <button onClick={() => { onCartClick(); setMobileMenuOpen(false); }}
-              className="w-full flex items-center gap-3 hover:opacity-60 transition-opacity py-2 relative">
-              <ShoppingCart className="w-5 h-5" /><span>Cart</span>
-              {cartCount > 0 && (
-                <span className="ml-auto bg-black text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
-              )}
-            </button>
+            {onCartClick && (
+              <button onClick={() => { onCartClick(); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 hover:opacity-60 transition-opacity py-2 relative">
+                <ShoppingCart className="w-5 h-5" /><span>Cart</span>
+                {cartCount > 0 && (
+                  <span className="ml-auto bg-black text-white text-xs px-2 py-1 rounded-full">{cartCount}</span>
+                )}
+              </button>
+            )}
 
             {/* Auth actions (mobile) */}
             {!user ? (
@@ -234,22 +241,21 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
               </button>
             ) : null}
 
-            {/* Portal links (mobile) — role-gated */}
-            {(isStaff || isAdmin) && (
+            {/* Portal links (mobile) — only for staff/admin, hidden from customers */}
+            {isStaff && (
               <div className="border-t border-gray-100 pt-2 mt-1">
-                <p className="text-xs text-gray-400 mb-2 px-1">Switch Portal</p>
-                {isStaff && (
-                  <button onClick={() => { router.push('/staff'); setMobileMenuOpen(false); }}
-                    className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity">
-                    <Coffee className="w-5 h-5 text-blue-500" /><span className="text-sm">Staff Portal</span>
-                  </button>
-                )}
-                {isAdmin && (
-                  <button onClick={() => { router.push('/admin'); setMobileMenuOpen(false); }}
-                    className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity">
-                    <ShieldCheck className="w-5 h-5 text-purple-500" /><span className="text-sm">Admin Panel</span>
-                  </button>
-                )}
+                <button onClick={() => { router.push('/staff'); setMobileMenuOpen(false); }}
+                  className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity">
+                  <Coffee className="w-5 h-5 text-blue-500" /><span className="text-sm">Staff Portal</span>
+                </button>
+              </div>
+            )}
+            {isAdmin && (
+              <div className="border-t border-gray-100 pt-2 mt-1">
+                <button onClick={() => { router.push('/admin'); setMobileMenuOpen(false); }}
+                  className="w-full flex items-center gap-3 py-2 hover:opacity-60 transition-opacity">
+                  <ShieldCheck className="w-5 h-5 text-purple-500" /><span className="text-sm">Admin Panel</span>
+                </button>
               </div>
             )}
 

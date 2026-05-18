@@ -7,11 +7,13 @@ import { AdminPage } from '../pages/AdminPage';
 
 export default function Admin() {
   const router = useRouter();
-  const { isAdmin, isLoading } = useAuth();
+  const { isAdmin, isStaff, isLoading } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && !isAdmin) router.replace('/');
-  }, [isLoading, isAdmin, router]);
+    if (!isLoading && !isAdmin) {
+      router.replace(isStaff ? '/staff' : '/');
+    }
+  }, [isLoading, isAdmin, isStaff, router]);
 
   if (isLoading) {
     return (

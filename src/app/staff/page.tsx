@@ -7,11 +7,11 @@ import { StaffPage } from '../pages/StaffPage';
 
 export default function Staff() {
   const router = useRouter();
-  const { isStaff, isLoading } = useAuth();
+  const { isStaff, isAdmin, isLoading } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && !isStaff) router.replace('/');
-  }, [isLoading, isStaff, router]);
+    if (!isLoading && !isStaff && !isAdmin) router.replace('/');
+  }, [isLoading, isStaff, isAdmin, router]);
 
   if (isLoading) {
     return (
@@ -21,7 +21,7 @@ export default function Staff() {
     );
   }
 
-  if (!isStaff) return null;
+  if (!isStaff && !isAdmin) return null;
 
   return <StaffPage />;
 }

@@ -9,6 +9,7 @@ import { Checkout } from '../components/Checkout';
 import { OrderHistory } from '../components/OrderHistory';
 import { SearchModal } from '../components/SearchModal';
 import { useApp, type Product } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import type { SavedOrder } from '../components/OrderHistory';
 
 interface CartItem extends Product {
@@ -17,6 +18,7 @@ interface CartItem extends Product {
 
 export function CustomerPage() {
   const { products, orders, addOrder, updateOrderStatus, settings } = useApp();
+  const { isAdmin } = useAuth();
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -27,6 +29,7 @@ export function CustomerPage() {
   const availableProducts = products.filter((p) => p.available);
 
   const addToCart = (product: typeof products[0]) => {
+    if (isAdmin) return;
     setCartItems((items) => {
       const existing = items.find((item) => item.id === product.id);
       if (existing) {
@@ -66,11 +69,17 @@ export function CustomerPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header
-        cartCount={cartCount}
-        onCartClick={() => setCartOpen(true)}
+        cartCount={isAdmin ? 0 : cartCount}
+        onCartClick={isAdmin ? undefined : () => setCartOpen(true)}
         onHistoryClick={() => setHistoryOpen(true)}
         onSearchClick={() => setSearchOpen(true)}
       />
+
+      {isAdmin && (
+        <div className="bg-purple-600 text-white text-center py-2 px-6 text-sm tracking-wide">
+          Preview Mode — You are viewing the store as a customer. Ordering is disabled.
+        </div>
+      )}
 
       <Hero />
 
