@@ -11,6 +11,8 @@ import {
   toggleProductAvailabilityInDb,
 } from '../../lib/supabase/products';
 import { fetchStoreSettingsFromDb, updateStoreSettingsInDb } from '../../lib/supabase/store_settings';
+import { createOrder } from '../../lib/services/orders';
+import { createClient } from '../../lib/supabase/client';
 import type { DisplayType, SetItem } from '../../lib/supabase/database.types';
 import heroDefaultImg from '../../imports/682530946_1011749808048143_8253999997136808313_n.jpg';
 
@@ -158,7 +160,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshSettings();
   }, [refreshProducts, refreshSettings]);
 
-  const addOrder = (order: SavedOrder) => setOrders((prev) => [order, ...prev]);
+  const addOrder = async (order: SavedOrder) => {
+    // Optimistic UI update
+    setOrders((prev) => [order, ...prev]);
+
+    if (isSupabaseConfigured) {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        await createOrder({
+          customer_name: order.name,
+          customer_id: session?.user?.id,
+          customer_email: session?.user?.email,
+          order_type: order.deliveryType,
+          payment_method: order.paymentMethod,
+          delivery_address: order.address ? `${order.address}, ${order.city || ''}` : undefined,
+          // Extract the first number from the random queue string or fallback to 0
+          queue_number: parseInt(order.orderNumber.replace(/[^0-9]/g, '')) || 0,
+          items: order.items.map(item => {
+            // Check if the item ID is a valid UUID, otherwise pass null
+            const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
+            return {
+              product_id: isValidUUID ? item.id : undefined,
+              product_name: item.name,
+              product_price: item.price,
+              quantity: item.quantity,
+            };
+          }),
+        });
+      } catch (err) {
+        console.error('Failed to save order to Supabase:', err);
+      }
+    }
+  };
 
   const updateOrderStatus = (orderNumber: string, status: SavedOrder['status']) =>
     setOrders((prev) => prev.map((o) => (o.orderNumber === orderNumber ? { ...o, status } : o)));
