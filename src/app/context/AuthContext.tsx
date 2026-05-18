@@ -14,6 +14,8 @@ import {
   getRoleFromSession,
   signInWithGoogle,
   signInWithGitHub,
+  signInAnonymously as _signInAnon,
+  linkGoogleIdentity as _linkGoogle,
   signOut as _signOut,
 } from '../../lib/supabase/auth';
 import type { AppRole } from '../../lib/supabase/database.types';
@@ -27,11 +29,14 @@ interface AuthState {
   isLoading: boolean;
   isAdmin: boolean;
   isStaff: boolean;
+  isAnonymous: boolean;
 }
 
 interface AuthActions {
   loginWithGoogle: () => Promise<void>;
   loginWithGitHub: () => Promise<void>;
+  loginAnonymously: () => Promise<void>;
+  linkGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -67,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const role: AppRole = getRoleFromSession(session);
   const isAdmin = role === 'admin';
   const isStaff = role === 'staff' || role === 'admin';
+  const isAnonymous = session?.user?.is_anonymous ?? false;
 
   const loginWithGoogle = useCallback(async () => {
     await signInWithGoogle();
@@ -74,6 +80,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGitHub = useCallback(async () => {
     await signInWithGitHub();
+  }, []);
+
+  const loginAnonymously = useCallback(async () => {
+    await _signInAnon();
+  }, []);
+
+  const linkGoogle = useCallback(async () => {
+    await _linkGoogle();
   }, []);
 
   const logout = useCallback(async () => {
@@ -87,8 +101,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     isAdmin,
     isStaff,
+    isAnonymous,
     loginWithGoogle,
     loginWithGitHub,
+    loginAnonymously,
+    linkGoogle,
     logout,
   };
 

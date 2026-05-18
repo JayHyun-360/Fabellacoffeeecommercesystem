@@ -1,5 +1,5 @@
 import { createClient } from './client';
-import type { AppRole } from './database.types';
+import type { AppRole, Profile } from './database.types';
 import type { Session, User } from '@supabase/supabase-js';
 
 // ─── Role extraction ──────────────────────────────────────────────────────────
@@ -41,10 +41,46 @@ export async function signOut() {
   return supabase.auth.signOut();
 }
 
+export async function signInAnonymously() {
+  const supabase = createClient();
+  return supabase.auth.signInAnonymously();
+}
+
+export async function linkGoogleIdentity() {
+  const supabase = createClient();
+  return supabase.auth.linkIdentity({
+    provider: 'google',
+    options: { redirectTo: `${window.location.origin}/` },
+  });
+}
+
 export async function getSession() {
   const supabase = createClient();
   const { data, error } = await supabase.auth.getSession();
   return { session: data.session, error };
+}
+
+// ─── Profile helpers (admin) ─────────────────────────────────────────────────
+
+export async function fetchAllProfiles(): Promise<Profile[]> {
+  const supabase = createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Profile[];
+}
+
+export async function updateProfileRole(userId: string, role: AppRole) {
+  const supabase = createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from('profiles')
+    .update({ role })
+    .eq('id', userId);
+  if (error) throw error;
 }
 
 // ─── Role guards ──────────────────────────────────────────────────────────────
@@ -58,5 +94,5 @@ export function isStaff(role: AppRole): boolean {
 }
 
 export function isCustomer(role: AppRole): boolean {
-  return true; // all authenticated users can act as customers
+  return true;
 }

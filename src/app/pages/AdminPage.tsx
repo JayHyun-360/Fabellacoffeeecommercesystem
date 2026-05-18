@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard, UtensilsCrossed, Receipt, Settings, ArrowLeft,
   TrendingUp, ShoppingBag, Coffee, Package, Plus, Pencil, Trash2,
   Eye, EyeOff, X, Check, Search, Image, ChevronDown,
   BarChart3, Star, AlertCircle,
-  Banknote, Smartphone, CreditCard
+  Banknote, Smartphone, CreditCard, Users2, Shield, UserCog
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
@@ -17,7 +17,10 @@ import { useApp, type Product, type HeroSlide } from '../context/AppContext';
 import type { SavedOrder } from '../components/OrderHistory';
 import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
 
-type AdminSection = 'dashboard' | 'menu' | 'transactions' | 'settings';
+import { fetchAllProfiles, updateProfileRole } from '../../lib/supabase/auth';
+import type { AppRole, Profile } from '../../lib/supabase/database.types';
+
+type AdminSection = 'dashboard' | 'menu' | 'transactions' | 'users' | 'settings';
 
 const CATEGORY_LABELS: Record<string, string> = {
   coffee: 'Coffee', food: 'Food', pastries: 'Pastries', beverages: 'Beverages',
@@ -783,6 +786,190 @@ function TransactionsSection() {
 
 // ─── Store Settings Section ───────────────────────────────────────────────────
 
+// ─── Users Management Section ────────────────────────────────────────────────
+
+const ROLE_CONFIG: Record<AppRole, { label: string; badge: string; icon: React.ReactNode }> = {
+  admin:    { label: 'Admin',    badge: 'bg-purple-50 text-purple-700 border border-purple-200', icon: <Shield className="w-3.5 h-3.5" /> },
+  staff:    { label: 'Staff',    badge: 'bg-blue-50 text-blue-700 border border-blue-200',     icon: <Coffee className="w-3.5 h-3.5" /> },
+  customer: { label: 'Customer', badge: 'bg-gray-50 text-gray-600 border border-gray-200',     icon: <UserCog className="w-3.5 h-3.5" /> },
+};
+
+function UsersManagementSection() {
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [updating, setUpdating] = useState<string | null>(null);
+
+  const loadProfiles = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchAllProfiles();
+      setProfiles(data);
+    } catch (err) {
+      console.error('Failed to load profiles:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadProfiles(); }, []);
+
+  const handleRoleChange = async (userId: string, newRole: AppRole) => {
+    try {
+      setUpdating(userId);
+      await updateProfileRole(userId, newRole);
+      setProfiles((prev) =>
+        prev.map((p) => (p.id === userId ? { ...p, role: newRole } : p))
+      );
+    } catch (err) {
+      console.error('Failed to update role:', err);
+      alert('Failed to update role. Please try again.');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const filtered = profiles.filter((p) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      (p.email ?? '').toLowerCase().includes(q) ||
+      (p.full_name ?? '').toLowerCase().includes(q) ||
+      p.role.toLowerCase().includes(q)
+    );
+  });
+
+  const staffCount = profiles.filter((p) => p.role === 'staff').length;
+  const customerCount = profiles.filter((p) => p.role === 'customer').length;
+  const anonCount = profiles.filter((p) => p.is_anonymous).length;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl mb-1">User Management</h2>
+        <p className="text-sm text-gray-400">Manage user roles and permissions</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Users', value: profiles.length, gradient: 'from-gray-50 to-white' },
+          { label: 'Staff', value: staffCount, gradient: 'from-blue-50 to-sky-50' },
+          { label: 'Customers', value: customerCount, gradient: 'from-green-50 to-emerald-50' },
+          { label: 'Guest Sessions', value: anonCount, gradient: 'from-amber-50 to-orange-50' },
+        ].map((s) => (
+          <div key={s.label} className={`bg-gradient-to-br ${s.gradient} rounded-2xl p-5 border border-gray-200/50 shadow-sm`}>
+            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">{s.label}</p>
+            <p className="text-2xl">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Search + Refresh */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name, email, or role..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-black transition-colors text-sm"
+          />
+        </div>
+        <button
+          onClick={loadProfiles}
+          className="px-4 py-2.5 bg-black text-white rounded-xl text-sm hover:bg-black/80 transition-colors"
+        >
+          Refresh
+        </button>
+      </div>
+
+      {/* Users Table */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin w-8 h-8 border-2 border-gray-300 border-t-black rounded-full" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <Users2 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+          <p>{search ? 'No users match your search' : 'No users found'}</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-3xl border border-gray-200/50 shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-gray-400 border-b border-gray-100 bg-gray-50/50">
+                  <th className="text-left px-5 py-3 font-normal">User</th>
+                  <th className="text-left px-5 py-3 font-normal hidden sm:table-cell">Email</th>
+                  <th className="text-left px-5 py-3 font-normal">Role</th>
+                  <th className="text-right px-5 py-3 font-normal">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map((profile) => {
+                  const cfg = ROLE_CONFIG[profile.role];
+                  return (
+                    <tr key={profile.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          {profile.avatar_url ? (
+                            <img src={profile.avatar_url} alt="" className="w-8 h-8 rounded-full" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                              <UserCog className="w-4 h-4 text-gray-400" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="truncate max-w-[150px]">{profile.full_name ?? (profile.is_anonymous ? 'Guest' : 'Unknown')}</p>
+                            {profile.is_anonymous && (
+                              <span className="text-xs text-amber-600">Anonymous</span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-gray-500 hidden sm:table-cell">
+                        <span className="truncate max-w-[200px] block">{profile.email ?? '—'}</span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${cfg.badge}`}>
+                          {cfg.icon}{cfg.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        {profile.role !== 'admin' && !profile.is_anonymous && (
+                          <select
+                            value={profile.role}
+                            disabled={updating === profile.id}
+                            onChange={(e) => handleRoleChange(profile.id, e.target.value as AppRole)}
+                            className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-black transition-colors disabled:opacity-50"
+                          >
+                            <option value="customer">Customer</option>
+                            <option value="staff">Staff</option>
+                          </select>
+                        )}
+                        {profile.role === 'admin' && (
+                          <span className="text-xs text-purple-500">Owner</span>
+                        )}
+                        {profile.is_anonymous && (
+                          <span className="text-xs text-gray-400">Guest</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Store Settings Section ──────────────────────────────────────────────────
+
 function StoreSettingsSection() {
   const { settings, updateSettings, updateHeroSlide, addHeroSlide, removeHeroSlide } = useApp();
   const [info, setInfo] = useState({ ...settings });
@@ -1001,6 +1188,7 @@ export function AdminPage() {
     { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { key: 'menu', label: 'Menu Management', icon: <UtensilsCrossed className="w-5 h-5" /> },
     { key: 'transactions', label: 'Transactions', icon: <Receipt className="w-5 h-5" /> },
+    { key: 'users', label: 'Users', icon: <Users2 className="w-5 h-5" /> },
     { key: 'settings', label: 'Store Settings', icon: <Settings className="w-5 h-5" /> },
   ];
 
@@ -1057,7 +1245,7 @@ export function AdminPage() {
             className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm text-gray-600 hover:bg-gray-50 hover:shadow-sm transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
-            Back to Store
+            Preview Store
           </button>
         </div>
       </aside>
@@ -1087,6 +1275,7 @@ export function AdminPage() {
             {section === 'dashboard' && <DashboardSection />}
             {section === 'menu' && <MenuManagementSection />}
             {section === 'transactions' && <TransactionsSection />}
+            {section === 'users' && <UsersManagementSection />}
             {section === 'settings' && <StoreSettingsSection />}
           </div>
         </main>
