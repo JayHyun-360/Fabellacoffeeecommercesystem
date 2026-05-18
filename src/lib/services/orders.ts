@@ -21,6 +21,7 @@ export interface CreateOrderPayload {
   payment_method: PaymentMethod;
   notes?: string;
   delivery_address?: string;
+  queue_number: number;
   items: Array<{
     product_id?: string;
     product_name: string;
