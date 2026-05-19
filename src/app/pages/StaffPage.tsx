@@ -7,7 +7,7 @@ import {
   CheckCircle, XCircle, Banknote, Smartphone, CreditCard,
   RefreshCw, Coffee, ChevronDown, ChevronUp, AlertCircle,
   UtensilsCrossed, ShoppingBag, QrCode, Wifi, Check, X,
-  User, LogOut, Menu
+  User, LogOut, Menu, Sparkles, TrendingUp
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -17,24 +17,24 @@ import logoImg from '../../imports/682349994_793900143580024_743914547050463231_
 
 type StatusFilter = 'all' | 'pending' | 'ongoing' | 'received' | 'cancelled';
 
-const ORDER_TYPE_CONFIG: Record<SavedOrder['deliveryType'], { label: string; icon: React.ReactNode; bg: string; text: string }> = {
-  'delivery': { label: 'Delivery',  icon: <Truck className="w-3.5 h-3.5" />,           bg: 'bg-blue-50',    text: 'text-blue-700'    },
-  'pickup':   { label: 'Pick Up',   icon: <ShoppingBag className="w-3.5 h-3.5" />,     bg: 'bg-purple-50',  text: 'text-purple-700'  },
-  'dine-in':  { label: 'Dine In',   icon: <UtensilsCrossed className="w-3.5 h-3.5" />, bg: 'bg-amber-50',   text: 'text-amber-700'   },
-  'takeout':  { label: 'Takeout',   icon: <ShoppingBag className="w-3.5 h-3.5" />,     bg: 'bg-emerald-50', text: 'text-emerald-700' },
+const ORDER_TYPE_CONFIG: Record<SavedOrder['deliveryType'], { label: string; icon: React.ReactNode; bg: string; text: string; border: string }> = {
+  'delivery': { label: 'Delivery',  icon: <Truck className="w-3.5 h-3.5" />,           bg: 'bg-blue-50/50',    text: 'text-blue-700',    border: 'border-blue-100'    },
+  'pickup':   { label: 'Pick Up',   icon: <ShoppingBag className="w-3.5 h-3.5" />,     bg: 'bg-purple-50/50',  text: 'text-purple-700',  border: 'border-purple-100'  },
+  'dine-in':  { label: 'Dine In',   icon: <UtensilsCrossed className="w-3.5 h-3.5" />, bg: 'bg-amber-50/50',   text: 'text-amber-700',   border: 'border-amber-100'   },
+  'takeout':  { label: 'Takeout',   icon: <ShoppingBag className="w-3.5 h-3.5" />,     bg: 'bg-emerald-50/50', text: 'text-emerald-700', border: 'border-emerald-100' },
 };
 
-const STATUS_CONFIG: Record<SavedOrder['status'], { label: string; dot: string; badge: string; ring: string }> = {
-  pending:   { label: 'Pending',     dot: 'bg-amber-400', badge: 'bg-amber-50 text-amber-700 border border-amber-200',  ring: 'ring-amber-200/60'  },
-  cancelled: { label: 'Cancelled',   dot: 'bg-red-400',   badge: 'bg-red-50 text-red-700 border border-red-200',        ring: 'ring-red-200/60'    },
-  ongoing:   { label: 'In Progress', dot: 'bg-blue-400',  badge: 'bg-blue-50 text-blue-700 border border-blue-200',     ring: 'ring-blue-200/60'   },
-  received:  { label: 'Completed',   dot: 'bg-green-400', badge: 'bg-green-50 text-green-700 border border-green-200',  ring: 'ring-green-200/60'  },
+const STATUS_CONFIG: Record<SavedOrder['status'], { label: string; dot: string; badge: string; ring: string; text: string }> = {
+  pending:   { label: 'Pending',     dot: 'bg-amber-400', badge: 'bg-amber-50 text-amber-700 border-amber-200',  ring: 'ring-amber-200/60',  text: 'text-amber-700' },
+  cancelled: { label: 'Cancelled',   dot: 'bg-red-400',   badge: 'bg-red-50 text-red-700 border-red-200',        ring: 'ring-red-200/60',    text: 'text-red-700'   },
+  ongoing:   { label: 'In Progress', dot: 'bg-blue-400',  badge: 'bg-blue-50/50 text-blue-700 border-blue-200',     ring: 'ring-blue-200/60',   text: 'text-blue-700'  },
+  received:  { label: 'Completed',   dot: 'bg-green-400', badge: 'bg-green-50 text-green-700 border-green-200',  ring: 'ring-green-200/60',  text: 'text-green-700' },
 };
 
 const PAYMENT_INFO: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
-  cod:   { icon: <Banknote className="w-4 h-4" />,   label: 'Cash',  color: 'text-gray-700'   },
-  gcash: { icon: <Smartphone className="w-4 h-4" />, label: 'GCash', color: 'text-blue-600'   },
-  card:  { icon: <CreditCard className="w-4 h-4" />, label: 'Card',  color: 'text-violet-600' },
+  cod:   { icon: <Banknote className="w-3.5 h-3.5" />,   label: 'Cash',  color: 'text-gray-700 border-gray-200 bg-gray-50'   },
+  gcash: { icon: <Smartphone className="w-3.5 h-3.5" />, label: 'GCash', color: 'text-blue-600 border-blue-100 bg-blue-50/50'  },
+  card:  { icon: <CreditCard className="w-3.5 h-3.5" />, label: 'Card',  color: 'text-violet-600 border-violet-100 bg-violet-50/50' },
 };
 
 // ─── GCash QR Modal ──────────────────────────────────────────────────────────
@@ -44,46 +44,47 @@ function GCashQRModal({ amount, customerName, onClose, onMarkPaid }: {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=09171234567&color=0065B3&bgcolor=ffffff&qzone=1`;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} />
-      <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden border border-gray-200/50">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+      <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 animate-in fade-in zoom-in duration-300">
         {/* Header */}
-        <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-5 text-white">
-          <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+        <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 text-white relative">
+          <button onClick={onClose} className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-all">
             <X className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-2 mb-1">
-            <Smartphone className="w-5 h-5" />
-            <span className="tracking-wide text-sm">GCash Payment</span>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-1.5 rounded-lg bg-white/10">
+              <Smartphone className="w-4 h-4 text-white" />
+            </div>
+            <span className="tracking-widest text-xs font-bold uppercase text-blue-100">GCash Checkout</span>
           </div>
-          <p className="text-3xl text-white mb-0.5">₱{amount.toLocaleString()}</p>
-          <p className="text-blue-100 text-sm">for {customerName}</p>
+          <p className="text-4xl font-light mb-1">₱{amount.toLocaleString()}</p>
+          <p className="text-blue-100/80 text-xs">Awaiting payment from <span className="font-semibold text-white">{customerName}</span></p>
         </div>
 
-        {/* QR Code */}
-        <div className="p-6 flex flex-col items-center gap-4">
-          <div className="bg-white rounded-2xl p-3 shadow-lg border border-gray-100 relative">
-            <img src={qrUrl} alt="GCash QR Code" className="w-[200px] h-[200px] rounded-xl" />
-            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs px-3 py-1 rounded-full shadow-md">
-              Scan with GCash App
-            </div>
+        {/* QR Code Content */}
+        <div className="p-8 flex flex-col items-center gap-6">
+          <div className="bg-white rounded-3xl p-4 shadow-xl border border-gray-100 relative group overflow-hidden">
+            {/* Pulsing Scan Indicator Line */}
+            <div className="absolute inset-x-0 top-0 h-0.5 bg-blue-500 animate-bounce" />
+            <img src={qrUrl} alt="GCash QR Code" className="w-[180px] h-[180px] rounded-2xl" />
           </div>
 
-          <div className="mt-3 w-full bg-blue-50 rounded-2xl p-4 text-center border border-blue-100">
-            <p className="text-xs text-blue-500 mb-1">Fabella Coffee GCash</p>
-            <p className="text-xl tracking-widest text-blue-700">0917-123-4567</p>
+          <div className="w-full bg-blue-50/50 rounded-2xl p-4 text-center border border-blue-100/50">
+            <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider mb-1">Fabella Coffee GCash Number</p>
+            <p className="text-2xl font-semibold tracking-wider text-blue-800">0917 123 4567</p>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
-            <Wifi className="w-3.5 h-3.5" />
-            Ask customer to scan or send to the number above
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <Wifi className="w-4 h-4 text-blue-500 animate-pulse" />
+            <span>Scan QR or transfer directly to phone number</span>
           </div>
 
           <button
             onClick={onMarkPaid}
-            className="w-full py-3.5 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
+            className="w-full py-4 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl hover:bg-blue-800 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm font-semibold"
           >
-            <Check className="w-5 h-5" />
-            Payment Received — Mark as Paid
+            <Check className="w-4 h-4" />
+            Confirm Payment Received
           </button>
         </div>
       </div>
@@ -99,7 +100,7 @@ function StaffOrderCard({ order, queueNum }: { order: SavedOrder; queueNum: numb
 
   const status = STATUS_CONFIG[order.status];
   const orderType = ORDER_TYPE_CONFIG[order.deliveryType];
-  const payment = PAYMENT_INFO[order.paymentMethod];
+  const payment = PAYMENT_INFO[order.paymentMethod] || PAYMENT_INFO['cod'];
 
   const handleAccept = () => updateOrderStatus(order.orderNumber, 'ongoing');
   const handleComplete = () => updateOrderStatus(order.orderNumber, 'received');
@@ -116,166 +117,177 @@ function StaffOrderCard({ order, queueNum }: { order: SavedOrder; queueNum: numb
 
   return (
     <>
-      <div className={`bg-white rounded-3xl overflow-hidden transition-all duration-300 shadow-md hover:shadow-xl ring-1 ${status.ring} ${
-        order.status === 'pending' ? 'ring-2 ring-amber-200' :
-        order.status === 'ongoing' ? 'ring-2 ring-blue-200' : 'ring-gray-200/50'
+      <div className={`bg-white rounded-3xl overflow-hidden transition-all duration-300 border border-gray-100 hover:shadow-xl hover:border-gray-200/80 group ${
+        order.status === 'pending' ? 'ring-2 ring-amber-400/20 shadow-md shadow-amber-500/2' :
+        order.status === 'ongoing' ? 'ring-2 ring-blue-500/20 shadow-md shadow-blue-500/2' : 'shadow-sm'
       }`}>
-        {/* Top accent bar */}
-        {isActive && (
-          <div className={`h-1 w-full ${order.status === 'pending' ? 'bg-gradient-to-r from-amber-400 to-orange-400' : 'bg-gradient-to-r from-blue-400 to-cyan-400'}`} />
-        )}
+        {/* Color Highlight Bar */}
+        <div className={`h-1.5 w-full transition-all ${
+          order.status === 'pending' ? 'bg-gradient-to-r from-amber-400 to-orange-400' :
+          order.status === 'ongoing' ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
+          order.status === 'received' ? 'bg-gradient-to-r from-emerald-400 to-green-500' : 'bg-gray-200'
+        }`} />
 
-        {/* Card Header */}
+        {/* Card Header Content */}
         <div
-          className="p-4 cursor-pointer hover:bg-gray-50/60 transition-colors"
+          className="p-5 cursor-pointer hover:bg-gray-50/50 transition-colors"
           onClick={() => setExpanded(!expanded)}
         >
-          <div className="flex items-start gap-3">
-            {/* Queue Number */}
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 text-sm shadow-sm ${
-              order.status === 'pending' ? 'bg-gradient-to-br from-amber-400 to-orange-400 text-white' :
+          <div className="flex items-start gap-4">
+            {/* Rounded Queue Badge */}
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 text-base font-bold shadow-sm ${
+              order.status === 'pending' ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' :
               order.status === 'ongoing' ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white' :
-              order.status === 'received' ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white' :
+              order.status === 'received' ? 'bg-gradient-to-br from-emerald-400 to-green-500 text-white' :
               'bg-gray-100 text-gray-400'
             }`}>
               #{queueNum}
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-sm text-gray-900">{order.name}</span>
-                <span className={`text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 ${status.badge}`}>
+              <div className="flex items-center justify-between gap-2 flex-wrap mb-1.5">
+                <span className="text-base font-semibold text-gray-900 truncate">{order.name}</span>
+                <span className={`text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1.5 border ${status.badge}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
                   {status.label}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${orderType.bg} ${orderType.text}`}>
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <span className={`flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${orderType.bg} ${orderType.text} ${orderType.border}`}>
                   {orderType.icon}{orderType.label}
                 </span>
-                <span className="text-xs text-gray-400">{timeStr}</span>
+                <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-gray-300" />
+                  {timeStr}
+                </span>
               </div>
 
-              <div className="flex items-center justify-between mt-1.5">
-                <span className="text-sm text-gray-600">
-                  {order.items.length} item{order.items.length !== 1 ? 's' : ''} · <span className="text-gray-900">₱{order.total}</span>
+              <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-gray-50">
+                <span className="text-sm text-gray-500">
+                  <span className="font-semibold text-gray-800">{order.items.length}</span> item{order.items.length !== 1 ? 's' : ''} · <span className="font-bold text-gray-900">₱{order.total}</span>
                 </span>
-                <div className={`flex items-center gap-1 text-xs ${payment.color}`}>
+                <div className={`flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-gray-100 text-gray-600 bg-gray-50`}>
                   {payment.icon}
                   <span>{payment.label}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex-shrink-0 text-gray-400 mt-1">
-              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            <div className="flex-shrink-0 text-gray-400 mt-1 hover:text-black transition-colors">
+              {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </div>
           </div>
         </div>
 
-        {/* Expanded Details */}
+        {/* Expanded Info Drawer */}
         {expanded && (
-          <div className="border-t border-gray-100 bg-gray-50/40 p-4 space-y-4">
-            {/* Delivery/Address Info */}
+          <div className="border-t border-gray-100 bg-gray-50/50 p-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+            {/* Fulfillment Address Details */}
             {(order.deliveryType === 'delivery' || order.deliveryType === 'pickup') && (
-              <div className="bg-white rounded-2xl p-3 space-y-2 border border-gray-100">
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Fulfillment</p>
+              <div className="bg-white rounded-2xl p-4 space-y-2 border border-gray-100 shadow-sm">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Fulfillment Address</p>
                 {order.deliveryType === 'delivery' && order.address ? (
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-gray-700">{order.address}{order.city ? `, ${order.city}` : ''}</span>
+                  <div className="flex items-start gap-2.5">
+                    <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-gray-700 leading-relaxed font-medium">{order.address}{order.city ? `, ${order.city}` : ''}</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <Store className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-700">Pick Up at Ramz Square Branch</span>
+                  <div className="flex items-center gap-2.5">
+                    <Store className="w-4 h-4 text-purple-500" />
+                    <span className="text-sm text-gray-700 font-medium">Pick Up at Store (Ramz Square Branch)</span>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Order Items */}
-            <div className="space-y-2">
-              <p className="text-xs text-gray-400 uppercase tracking-wide">Items</p>
+            {/* Sub-item Cards list */}
+            <div className="bg-white rounded-2xl p-4 space-y-3 border border-gray-100 shadow-sm">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Order Items</p>
               {order.items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
+                <div key={item.id} className="flex items-center gap-3 py-1 border-b border-gray-50 last:border-b-0">
+                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0 border border-gray-100">
                     {item.image
                       ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center"><Package className="w-4 h-4 text-gray-400" /></div>}
+                      : <div className="w-full h-full flex items-center justify-center"><Package className="w-4 h-4 text-gray-300" /></div>}
                   </div>
-                  <span className="flex-1 text-sm">{item.name}</span>
-                  <span className="text-xs text-gray-400">×{item.quantity}</span>
-                  <span className="text-sm text-gray-900">₱{item.price * item.quantity}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-semibold text-gray-800 truncate block">{item.name}</span>
+                    <span className="text-xs text-gray-400">₱{item.price} each</span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">×{item.quantity}</span>
+                  <span className="text-sm font-bold text-gray-900 w-16 text-right">₱{item.price * item.quantity}</span>
                 </div>
               ))}
             </div>
 
-            {/* Total */}
-            <div className="bg-white rounded-2xl p-3 space-y-1.5 border border-gray-100">
+            {/* Calculations Breakdown */}
+            <div className="bg-white rounded-2xl p-4 space-y-2 border border-gray-100 shadow-sm">
               <div className="flex justify-between text-sm text-gray-500">
-                <span>Subtotal</span><span>₱{order.subtotal}</span>
+                <span>Subtotal</span><span className="font-semibold text-gray-800">₱{order.subtotal}</span>
               </div>
               {order.deliveryFee > 0 && (
                 <div className="flex justify-between text-sm text-gray-500">
-                  <span>Delivery Fee</span><span>₱{order.deliveryFee}</span>
+                  <span>Delivery Rider Fee</span><span className="font-semibold text-gray-800">₱{order.deliveryFee}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm pt-1.5 border-t border-gray-100">
-                <span>Total</span><span className="text-gray-900">₱{order.total}</span>
+              <div className="flex justify-between text-sm pt-2 border-t border-gray-100 font-bold text-gray-900">
+                <span>Total Amount Due</span><span className="text-base text-black">₱{order.total}</span>
               </div>
-              <div className={`flex items-center gap-1.5 text-xs ${payment.color} pt-1`}>
+
+              <div className="w-full h-px bg-gray-100 my-2" />
+
+              <div className={`flex items-center gap-2 text-xs pt-1 ${payment.color}`}>
                 {payment.icon}
-                <span>{payment.label}</span>
+                <span className="font-semibold">Paid via {payment.label}</span>
                 {order.paymentMethod === 'cod' && order.status === 'pending' && (
-                  <span className="ml-auto text-amber-600 flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" />Collect payment
+                  <span className="ml-auto text-amber-600 flex items-center gap-1 font-bold animate-pulse">
+                    <AlertCircle className="w-3.5 h-3.5" />Collect Cash
                   </span>
                 )}
                 {order.paymentMethod === 'gcash' && order.status === 'pending' && (
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowGCashQR(true); }}
-                    className="ml-auto flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
+                    className="ml-auto flex items-center gap-1.5 text-blue-600 hover:text-blue-700 transition-colors font-bold bg-blue-50 px-3 py-1 rounded-full border border-blue-100 shadow-sm"
                   >
-                    <QrCode className="w-3.5 h-3.5" />Show QR
+                    <QrCode className="w-3.5 h-3.5" />Show GCash QR
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* CTAs / Action Buttons */}
             {isActive && (
-              <div className="flex gap-3 pt-1">
+              <div className="flex gap-3 pt-2">
                 {order.status === 'pending' && (
                   <button
                     onClick={handleCancel}
-                    className="flex items-center gap-1.5 px-5 py-3 border border-red-200 text-red-600 rounded-2xl hover:bg-red-50 hover:shadow-md transition-all text-sm"
+                    className="flex items-center justify-center gap-1.5 px-5 py-3.5 border border-red-200 text-red-600 rounded-2xl hover:bg-red-50 hover:shadow-md transition-all text-xs font-semibold"
                   >
-                    <XCircle className="w-4 h-4" />Cancel
+                    <XCircle className="w-4 h-4" />Cancel Order
                   </button>
                 )}
                 {order.paymentMethod === 'gcash' && order.status === 'pending' ? (
                   <button
                     onClick={() => setShowGCashQR(true)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl hover:shadow-lg hover:scale-105 transition-all text-sm"
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all text-xs font-semibold"
                   >
-                    <QrCode className="w-4 h-4" />Show GCash QR
+                    <QrCode className="w-4 h-4" />Show GCash QR Code
                   </button>
                 ) : (
                   <button
                     onClick={order.status === 'pending' ? handleAccept : handleComplete}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl hover:shadow-lg hover:scale-105 transition-all text-sm"
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all text-xs font-bold"
                   >
                     {order.status === 'pending' ? (
-                      <><CheckCircle className="w-4 h-4" />
-                        {order.deliveryType === 'delivery' ? 'Accept & Start Delivery' :
-                         order.deliveryType === 'pickup'   ? 'Accept Order' :
-                         order.deliveryType === 'dine-in'  ? 'Accept — Dine In' : 'Accept — Takeout'}
+                      <><CheckCircle className="w-4 h-4 text-emerald-400" />
+                        {order.deliveryType === 'delivery' ? 'Accept & Ship Delivery' :
+                         order.deliveryType === 'pickup'   ? 'Accept Pick Up Order' :
+                         order.deliveryType === 'dine-in'  ? 'Accept Dine-In Order' : 'Accept Takeout Order'}
                       </>
                     ) : (
-                      <><CheckCircle className="w-4 h-4" />
-                        {order.deliveryType === 'delivery' ? 'Mark Delivered' : 'Mark Completed'}
+                      <><CheckCircle className="w-4 h-4 text-emerald-400" />
+                        {order.deliveryType === 'delivery' ? 'Mark Order Delivered' : 'Complete Preparation'}
                       </>
                     )}
                   </button>
@@ -344,167 +356,166 @@ export function StaffPage() {
   });
 
   const tabs: { key: StatusFilter; label: string; count?: number }[] = [
-    { key: 'all',       label: 'All',       count: orders.length  },
-    { key: 'pending',   label: 'Pending',   count: pendingCount   },
-    { key: 'ongoing',   label: 'Active',    count: ongoingCount   },
-    { key: 'received',  label: 'Done'                             },
-    { key: 'cancelled', label: 'Cancelled'                        },
+    { key: 'all',       label: 'All Orders', count: orders.length  },
+    { key: 'pending',   label: 'Pending',    count: pendingCount   },
+    { key: 'ongoing',   label: 'Ongoing',    count: ongoingCount   },
+    { key: 'received',  label: 'Completed'                         },
+    { key: 'cancelled', label: 'Cancelled'                         },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      {/* Mobile Menu Overlay */}
+    <div className="min-h-screen bg-[#FDFDFD] text-gray-800">
+      {/* Mobile Sidebar Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden" onClick={() => setMobileMenuOpen(false)} />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 md:hidden animate-in fade-in duration-300" onClick={() => setMobileMenuOpen(false)} />
       )}
       {mobileMenuOpen && (
-        <div className="fixed inset-y-0 right-0 w-72 bg-white z-50 shadow-2xl flex flex-col md:hidden">
-          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-            <p className="text-sm">Staff Menu</p>
-            <button onClick={() => setMobileMenuOpen(false)} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center">
-              <X className="w-5 h-5" />
+        <div className="fixed inset-y-0 right-0 w-80 bg-white z-50 shadow-2xl flex flex-col md:hidden animate-in slide-in-from-right duration-300">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <span className="text-sm font-bold tracking-widest text-gray-400 uppercase">Staff Portal Menu</span>
+            <button onClick={() => setMobileMenuOpen(false)} className="w-8 h-8 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors">
+              <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
           {user && (
-            <div className="p-5 border-b border-gray-100">
+            <div className="p-6 border-b border-gray-100 bg-gradient-to-br from-gray-50 to-white">
               <div className="flex items-center gap-3">
                 {user.user_metadata?.avatar_url ? (
-                  <img src={user.user_metadata.avatar_url} alt="" className="w-10 h-10 rounded-full" />
+                  <img src={user.user_metadata.avatar_url} alt="" className="w-12 h-12 rounded-2xl object-cover border border-gray-100" />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                    <User className="w-5 h-5 text-gray-500" />
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-900 to-black flex items-center justify-center shadow-sm">
+                    <User className="w-5 h-5 text-white" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm truncate">{user.user_metadata?.full_name ?? 'Staff'}</p>
+                  <p className="text-sm font-semibold text-gray-900 truncate">{user.user_metadata?.full_name ?? 'Staff User'}</p>
                   <p className="text-xs text-gray-400 truncate">{user.email}</p>
                 </div>
               </div>
-              <div className="mt-2">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                  {isAdmin ? 'Admin (Preview)' : 'Staff'}
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  {isAdmin ? 'Admin (Preview)' : 'Staff Member'}
                 </span>
               </div>
             </div>
           )}
-          <div className="p-4 border-b border-gray-100">
-            <div className="flex items-center gap-2 text-gray-600">
-              <Clock className="w-4 h-4" />
-              <span className="text-sm">{dateStr} · {timeStr}</span>
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-3 rounded-2xl border border-gray-100">
+              <Clock className="w-4 h-4 text-gray-400 flex-shrink-0 animate-pulse" />
+              <span className="text-xs font-semibold leading-relaxed text-gray-600">{dateStr} · {timeStr}</span>
             </div>
           </div>
           {isAdmin && (
             <div className="p-3">
               <button
                 onClick={() => { router.push('/admin'); setMobileMenuOpen(false); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-sm"
+                className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-gray-50 transition-colors text-sm font-semibold"
               >
                 <ArrowLeft className="w-4 h-4 text-gray-400" />Back to Admin Panel
               </button>
             </div>
           )}
-          <div className="mt-auto p-5 border-t border-gray-100">
+          <div className="mt-auto p-6 border-t border-gray-100 bg-gray-50/50">
             <button
               onClick={() => { logout(); setMobileMenuOpen(false); }}
-              className="w-full flex items-center gap-3 px-5 py-3 rounded-2xl text-sm text-red-600 hover:bg-red-50 transition-all"
+              className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-all shadow-sm"
             >
-              <LogOut className="w-5 h-5" />Sign Out
+              <LogOut className="w-4 h-4" />Sign Out Portal
             </button>
           </div>
         </div>
       )}
 
-      {/* Header */}
-      <header className="bg-gradient-to-br from-gray-900 via-gray-900 to-black sticky top-0 z-40 shadow-2xl">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img src={typeof logoImg === 'string' ? logoImg : logoImg.src} alt="Fabella Coffee" className="w-11 h-11 object-contain" />
-              <div>
-                <p className="text-white text-sm tracking-widest font-semibold">FABELLA COFFEE</p>
-                <p className="text-gray-400 text-xs flex items-center gap-1">
-                  <Coffee className="w-3 h-3" />{isAdmin ? 'Staff Preview' : 'Staff Portal'}
-                </p>
-              </div>
+      {/* Premium Sticky Header */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={typeof logoImg === 'string' ? logoImg : logoImg.src} alt="Fabella Coffee" className="w-12 h-12 object-contain" />
+            <div>
+              <p className="text-black text-sm tracking-[0.2em] font-bold">FABELLA COFFEE</p>
+              <p className="text-gray-400 text-[10px] uppercase font-bold tracking-wider flex items-center gap-1">
+                <Coffee className="w-3 h-3 text-amber-600" />
+                <span>{isAdmin ? 'Staff Preview Portal' : 'Order Management'}</span>
+              </p>
             </div>
+          </div>
 
-            <div className="hidden md:flex items-center gap-3">
-              <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-                <Clock className="w-3.5 h-3.5 text-gray-300" />
-                <span className="text-sm text-gray-200">{dateStr} · {timeStr}</span>
-              </div>
-              <StaffLegalFAQ />
+          <div className="hidden md:flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-2xl border border-gray-100 shadow-inner">
+              <Clock className="w-4 h-4 text-gray-400 animate-pulse" />
+              <span className="text-xs font-semibold text-gray-600">{dateStr} · {timeStr}</span>
             </div>
+            <StaffLegalFAQ />
+          </div>
 
-            <div className="flex items-center gap-2">
-              {/* Hamburger (mobile) */}
+          <div className="flex items-center gap-3">
+            {/* Mobile Hamburger toggle button */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all shadow-sm"
+            >
+              <Menu className="w-5 h-5 text-gray-700" />
+            </button>
+
+            {/* Premium Profile Dropdown */}
+            <div className="relative hidden md:block" ref={profileRef}>
               <button
-                onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden w-9 h-9 flex items-center justify-center rounded-full border border-white/20 hover:border-white/40 transition-all"
+                onClick={() => setProfileOpen(!profileOpen)}
+                className={`w-10 h-10 flex items-center justify-center rounded-2xl overflow-hidden transition-all border ${
+                  profileOpen ? 'border-black ring-4 ring-black/10' : 'border-gray-200 hover:border-gray-300'
+                }`}
               >
-                <Menu className="w-[18px] h-[18px] text-white" />
+                {user?.user_metadata?.avatar_url ? (
+                  <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-5 h-5 text-gray-600" />
+                )}
               </button>
 
-              {/* Profile dropdown (desktop) */}
-              <div className="relative hidden md:block" ref={profileRef}>
-                <button
-                  onClick={() => setProfileOpen(!profileOpen)}
-                  className={`w-9 h-9 flex items-center justify-center rounded-full transition-all overflow-hidden border ${
-                    profileOpen ? 'border-white ring-2 ring-white/30' : 'border-white/20 hover:border-white/40'
-                  }`}
-                >
-                  {user?.user_metadata?.avatar_url ? (
-                    <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <User className="w-[18px] h-[18px] text-white" />
-                  )}
-                </button>
-
-                {profileOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
-                    {user && (
-                      <div className="px-4 pt-4 pb-3 border-b border-gray-100">
-                        <div className="flex items-center gap-3">
-                          {user.user_metadata?.avatar_url ? (
-                            <img src={user.user_metadata.avatar_url} alt="" className="w-10 h-10 rounded-full" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                              <User className="w-5 h-5 text-gray-500" />
-                            </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm truncate">{user.user_metadata?.full_name ?? 'Staff'}</p>
-                            <p className="text-xs text-gray-400 truncate">{user.email}</p>
+              {profileOpen && (
+                <div className="absolute right-0 top-full mt-3 w-72 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-in fade-in duration-300">
+                  {user && (
+                    <div className="px-5 pt-5 pb-4 border-b border-gray-100 bg-gray-50/50">
+                      <div className="flex items-center gap-3">
+                        {user.user_metadata?.avatar_url ? (
+                          <img src={user.user_metadata.avatar_url} alt="" className="w-12 h-12 rounded-2xl object-cover border border-gray-200 shadow-sm" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-900 to-black flex items-center justify-center shadow-sm">
+                            <User className="w-5 h-5 text-white" />
                           </div>
-                        </div>
-                        <div className="mt-2">
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                            {isAdmin ? 'Admin (Preview)' : 'Staff'}
-                          </span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-gray-900 truncate">{user.user_metadata?.full_name ?? 'Staff Member'}</p>
+                          <p className="text-xs text-gray-400 truncate">{user.email}</p>
                         </div>
                       </div>
-                    )}
-                    {isAdmin && (
-                      <div className="p-2">
-                        <button
-                          onClick={() => { router.push('/admin'); setProfileOpen(false); }}
-                          className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left text-sm"
-                        >
-                          <ArrowLeft className="w-4 h-4 text-gray-400" />Back to Admin Panel
-                        </button>
+                      <div className="mt-3">
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                          {isAdmin ? 'Admin (Preview)' : 'Staff Member'}
+                        </span>
                       </div>
-                    )}
-                    <div className="p-2 border-t border-gray-100">
+                    </div>
+                  )}
+                  {isAdmin && (
+                    <div className="p-2">
                       <button
-                        onClick={() => { logout(); setProfileOpen(false); }}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 transition-colors text-red-600 text-sm"
+                        onClick={() => { router.push('/admin'); setProfileOpen(false); }}
+                        className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-gray-50 transition-colors text-left text-sm font-semibold"
                       >
-                        <LogOut className="w-4 h-4" />Sign Out
+                        <ArrowLeft className="w-4 h-4 text-gray-400" />Back to Admin Panel
                       </button>
                     </div>
+                  )}
+                  <div className="p-2 border-t border-gray-100">
+                    <button
+                      onClick={() => { logout(); setProfileOpen(false); }}
+                      className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-red-50 transition-colors text-red-600 text-sm font-bold"
+                    >
+                      <LogOut className="w-4 h-4" />Sign Out Portal
+                    </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -512,81 +523,110 @@ export function StaffPage() {
 
       {/* Admin preview banner */}
       {isAdmin && (
-        <div className="bg-blue-600 text-white text-center py-2 px-6 text-sm tracking-wide">
-          Preview Mode — You are viewing the staff portal as admin. Actions are view-only.
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center py-2.5 px-6 text-xs tracking-widest font-semibold uppercase animate-pulse shadow-md">
+          Staff Portal Preview — Real Actions Disallowed
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+        
+        {/* Banner Welcome Message */}
+        <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-black rounded-[2.5rem] p-8 lg:p-10 text-white relative overflow-hidden shadow-xl shadow-gray-900/10">
+          <div className="absolute right-0 bottom-0 opacity-10 translate-x-12 translate-y-12 select-none pointer-events-none">
+            <Coffee className="w-96 h-96" />
+          </div>
+          <div className="relative z-10 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/20">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-200">Store operations ready</span>
+            </div>
+            <h1 className="text-3xl lg:text-4xl font-light tracking-tight text-white">
+              Hello, <span className="font-semibold">{user?.user_metadata?.full_name?.split(' ')[0] ?? 'Operator'}</span>
+            </h1>
+            <p className="text-gray-400 text-sm max-w-xl leading-relaxed">
+              Welcome back to the order management desk. Track real-time order requests, coordinate dine-in & delivery logistics, and mark items completed.
+            </p>
+          </div>
+        </div>
+
+        {/* Operational Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { label: 'Pending',        value: pendingCount,                   gradient: 'from-amber-50 to-orange-50',  border: 'border-amber-200/60',  num: 'text-amber-600'  },
-            { label: 'Active',         value: ongoingCount,                   gradient: 'from-blue-50 to-cyan-50',     border: 'border-blue-200/60',   num: 'text-blue-600'   },
-            { label: 'Done Today',     value: completedToday,                 gradient: 'from-green-50 to-emerald-50', border: 'border-green-200/60',  num: 'text-green-600'  },
-            { label: "Today's Revenue",value: `₱${todayRevenue.toLocaleString()}`, gradient: 'from-white to-gray-50', border: 'border-gray-200/60',   num: 'text-gray-900'   },
+            { label: 'Pending Queue',  value: pendingCount,                      gradient: 'from-amber-500/5 to-amber-500/10',     border: 'border-amber-200/50',  color: 'text-amber-700',  icon: <Clock className="w-5 h-5" /> },
+            { label: 'Active Kitchen', value: ongoingCount,                      gradient: 'from-blue-500/5 to-blue-500/10',       border: 'border-blue-200/50',   color: 'text-blue-700',   icon: <Coffee className="w-5 h-5 animate-pulse" /> },
+            { label: 'Done Today',     value: completedToday,                    gradient: 'from-emerald-500/5 to-emerald-500/10', border: 'border-emerald-200/50 border', color: 'text-emerald-700', icon: <CheckCircle className="w-5 h-5" /> },
+            { label: "Today's Revenue",value: `₱${todayRevenue.toLocaleString()}`, gradient: 'from-white to-gray-50',                border: 'border-gray-200/60 shadow-sm border',  color: 'text-gray-900 font-bold', icon: <TrendingUp className="w-5 h-5 text-gray-500" /> },
           ].map((s) => (
-            <div key={s.label} className={`bg-gradient-to-br ${s.gradient} border ${s.border} rounded-3xl p-5 shadow-sm hover:shadow-md transition-all`}>
-              <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">{s.label}</p>
-              <p className={`text-3xl ${s.num}`}>{s.value}</p>
+            <div key={s.label} className={`bg-gradient-to-br ${s.gradient} border ${s.border} rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex justify-between items-start group`}>
+              <div className="space-y-2">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{s.label}</p>
+                <p className={`text-4xl font-light tracking-tight ${s.color}`}>{s.value}</p>
+              </div>
+              <div className="p-2.5 bg-white rounded-2xl shadow-sm border border-gray-100 group-hover:scale-110 transition-transform">
+                {s.icon}
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setStatusFilter(tab.key)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm transition-all shadow-sm ${
-                statusFilter === tab.key
-                  ? 'bg-gradient-to-br from-gray-900 to-black text-white shadow-lg scale-105'
-                  : 'bg-white border border-gray-200 hover:border-black hover:shadow-md text-gray-700'
-              }`}
-            >
-              {tab.label}
-              {tab.count !== undefined && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  statusFilter === tab.key ? 'bg-white/25 text-white' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
+        {/* Filter Navigation Tabs and Legends */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-100 pb-6">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setStatusFilter(tab.key)}
+                className={`flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-all shadow-sm ${
+                  statusFilter === tab.key
+                    ? 'bg-black text-white shadow-lg shadow-black/20 scale-[1.03]'
+                    : 'bg-white border border-gray-200 hover:border-black text-gray-600 hover:text-black'
+                }`}
+              >
+                <span>{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600 border border-gray-200'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Dining Legend (Desktop only) */}
+          <div className="hidden lg:flex gap-2.5 flex-wrap">
+            {Object.entries(ORDER_TYPE_CONFIG).map(([key, cfg]) => (
+              <span key={key} className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text} border ${cfg.border} shadow-sm`}>
+                {cfg.icon}
+                <span>{cfg.label}</span>
+              </span>
+            ))}
+          </div>
         </div>
 
-        {/* Order Type Legend */}
-        <div className="hidden sm:flex gap-3 flex-wrap">
-          {Object.entries(ORDER_TYPE_CONFIG).map(([key, cfg]) => (
-            <span key={key} className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text} border border-current/20`}>
-              {cfg.icon}{cfg.label}
-            </span>
-          ))}
-        </div>
-
-        {/* Order Queue */}
+        {/* Order Cards Grid */}
         {sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-32 text-center">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-5 shadow-md">
-              <RefreshCw className="w-9 h-9 text-gray-300" />
+          <div className="flex flex-col items-center justify-center py-32 text-center bg-white rounded-[2.5rem] border border-gray-100 shadow-sm">
+            <div className="w-24 h-24 rounded-3xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-6 shadow-sm">
+              <RefreshCw className="w-10 h-10 text-gray-300 animate-spin" style={{ animationDuration: '6s' }} />
             </div>
-            <p className="text-gray-500 text-lg">Queue is clear</p>
-            <p className="text-sm text-gray-400 mt-2">
+            <p className="text-gray-800 text-xl font-semibold">Queue is clear</p>
+            <p className="text-sm text-gray-400 mt-2 max-w-sm">
               {statusFilter === 'all'
-                ? 'No orders yet. Orders from customers will appear here.'
-                : `No ${statusFilter} orders right now.`}
+                ? 'No customer orders have been recorded today. Fresh orders will display here automatically.'
+                : `No ${statusFilter} orders are currently present in your operations queue.`}
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {sorted.map((order, idx) => (
               <StaffOrderCard key={order.orderNumber} order={order} queueNum={idx + 1} />
             ))}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
