@@ -2,7 +2,7 @@
 
 export type AppRole = 'admin' | 'staff' | 'customer';
 export type ProductCategory = 'coffee' | 'food' | 'pastries' | 'beverages';
-export type DisplayType = 'regular' | 'promo' | 'set' | 'featured';
+export type DisplayType = 'regular' | 'set';
 export type OrderStatus = 'pending' | 'ongoing' | 'completed' | 'cancelled';
 export type OrderType = 'dine-in' | 'takeout' | 'delivery' | 'pickup';
 export type PaymentMethod = 'cod' | 'gcash' | 'card';
@@ -36,6 +36,8 @@ export interface Product {
   image: string;
   available: boolean;
   set_items: SetItem[] | null;
+  is_featured: boolean;
+  is_promo: boolean;
   created_at: string;
   updated_at: string;
 }

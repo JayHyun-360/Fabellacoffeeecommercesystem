@@ -27,6 +27,8 @@ export async function createProductInDb(product: {
   image: string;
   available: boolean;
   set_items?: SetItem[] | null;
+  is_featured?: boolean;
+  is_promo?: boolean;
 }): Promise<Product> {
   const supabase = createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,6 +44,8 @@ export async function createProductInDb(product: {
       image: product.image,
       available: product.available,
       set_items: product.set_items ?? null,
+      is_featured: product.is_featured ?? false,
+      is_promo: product.is_promo ?? false,
     })
     .select()
     .single();
@@ -63,6 +67,8 @@ export async function updateProductInDb(
     image: string;
     available: boolean;
     set_items: SetItem[] | null;
+    is_featured: boolean;
+    is_promo: boolean;
   }>
 ): Promise<Product> {
   const supabase = createClient();

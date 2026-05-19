@@ -27,6 +27,10 @@ export interface Product {
   image: string;
   available: boolean;
   set_items?: SetItem[] | null;
+  is_featured?: boolean;
+  is_promo?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface HeroSlide {
@@ -53,23 +57,23 @@ export interface StoreSettings {
 }
 
 const INITIAL_PRODUCTS: Product[] = [
-  { id: '1', name: 'Espresso', description: 'Rich and bold single shot', price: 85, category: 'coffee', display_type: 'regular', image: 'https://images.unsplash.com/photo-1528401635478-821b5f89ff94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '2', name: 'Cappuccino', description: 'Espresso with steamed milk foam', price: 120, category: 'coffee', display_type: 'regular', image: 'https://images.unsplash.com/photo-1645445644664-8f44112f334c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '3', name: 'Flat White', description: 'Smooth microfoam perfection', price: 135, category: 'coffee', display_type: 'regular', image: 'https://images.unsplash.com/photo-1612871616386-b0346398949d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '4', name: 'Cold Brew', description: 'Smooth, cold-steeped coffee', price: 145, category: 'coffee', display_type: 'regular', image: 'https://images.unsplash.com/photo-1637178628249-215e78e3c716?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '5', name: 'Avocado Toast', description: 'Sourdough with fresh avocado', price: 185, category: 'food', display_type: 'regular', image: 'https://images.unsplash.com/photo-1676471970358-1cff04452e7b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '6', name: 'Breakfast Burrito', description: 'Eggs, cheese, and chorizo', price: 165, category: 'food', display_type: 'regular', image: 'https://images.unsplash.com/photo-1609158087148-3bae840bcfda?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '7', name: 'Caesar Salad', description: 'Classic with parmesan', price: 155, category: 'food', display_type: 'regular', image: 'https://images.unsplash.com/photo-1616902685816-fbe1aeb3ea79?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '8', name: 'Grilled Sandwich', description: 'Turkey and swiss on rye', price: 175, category: 'food', display_type: 'regular', image: 'https://images.unsplash.com/photo-1616902666559-af398792d890?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '9', name: 'Croissant', description: 'Buttery and flaky', price: 65, category: 'pastries', display_type: 'regular', image: 'https://images.unsplash.com/photo-1751151856149-5ebf1d21586a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '10', name: 'Blueberry Muffin', description: 'Fresh baked daily', price: 55, category: 'pastries', display_type: 'regular', image: 'https://images.unsplash.com/photo-1571157577110-493b325fdd3d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '11', name: 'Chocolate Brownie', description: 'Rich and fudgy', price: 75, category: 'pastries', display_type: 'regular', image: 'https://images.unsplash.com/photo-1737700088850-d0b53f9d39ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '12', name: 'Almond Scone', description: 'Light and crumbly', price: 70, category: 'pastries', display_type: 'regular', image: 'https://images.unsplash.com/photo-1712723246766-3eaea22e52ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxjcm9pc3NhbnQlMjJiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '13', name: 'Matcha Latte', description: 'Ceremonial grade matcha', price: 150, category: 'beverages', display_type: 'regular', image: 'https://images.unsplash.com/photo-1708572727896-117b5ea25a86?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '14', name: 'Chai Tea', description: 'Spiced black tea latte', price: 115, category: 'beverages', display_type: 'regular', image: 'https://images.unsplash.com/photo-1708572808503-48242f5c9a89?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '15', name: 'Fresh Orange Juice', description: 'Squeezed to order', price: 95, category: 'beverages', display_type: 'regular', image: 'https://images.unsplash.com/photo-1727850005779-1e24cac382d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-  { id: '16', name: 'Hot Chocolate', description: 'Rich Belgian chocolate', price: 125, category: 'beverages', display_type: 'regular', image: 'https://images.unsplash.com/photo-1727850005809-d575cdcac28c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true },
-];
+  { id: '1', name: 'Espresso', description: 'Rich and bold single shot', price: 85, category: 'coffee', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1528401635478-821b5f89ff94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '2', name: 'Cappuccino', description: 'Espresso with steamed milk foam', price: 120, category: 'coffee', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1645445644664-8f44112f334c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '3', name: 'Flat White', description: 'Smooth microfoam perfection', price: 135, category: 'coffee', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1612871616386-b0346398949d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '4', name: 'Cold Brew', description: 'Smooth, cold-steeped coffee', price: 145, category: 'coffee', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1637178628249-215e78e3c716?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxjb2ZmZWUlMjBlc3ByZXNzbyUyMGN1cHxlbnwxfHx8fDE3Nzc0NjkyMjB8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '5', name: 'Avocado Toast', description: 'Sourdough with fresh avocado', price: 185, category: 'food', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1676471970358-1cff04452e7b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '6', name: 'Breakfast Burrito', description: 'Eggs, cheese, and chorizo', price: 165, category: 'food', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1609158087148-3bae840bcfda?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '7', name: 'Caesar Salad', description: 'Classic with parmesan', price: 155, category: 'food', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1616902685816-fbe1aeb3ea79?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '8', name: 'Grilled Sandwich', description: 'Turkey and swiss on rye', price: 175, category: 'food', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1616902666559-af398792d890?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxhdm9jYWRvJTIwdG9hc3QlMjBicmVha2Zhc3R8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '9', name: 'Croissant', description: 'Buttery and flaky', price: 65, category: 'pastries', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1751151856149-5ebf1d21586a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '10', name: 'Blueberry Muffin', description: 'Fresh baked daily', price: 55, category: 'pastries', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1571157577110-493b325fdd3d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '11', name: 'Chocolate Brownie', description: 'Rich and fudgy', price: 75, category: 'pastries', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1737700088850-d0b53f9d39ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxjcm9pc3NhbnQlMjBwYXN0cnklMjBiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '12', name: 'Almond Scone', description: 'Light and crumbly', price: 70, category: 'pastries', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1712723246766-3eaea22e52ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxjcm9pc3NhbnQlMjJiYWtlcnl8ZW58MXx8fHwxNzc3NDY5MjIxfDA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '13', name: 'Matcha Latte', description: 'Ceremonial grade matcha', price: 150, category: 'beverages', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1708572727896-117b5ea25a86?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '14', name: 'Chai Tea', description: 'Spiced black tea latte', price: 115, category: 'beverages', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1708572808503-48242f5c9a89?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '15', name: 'Fresh Orange Juice', description: 'Squeezed to order', price: 95, category: 'beverages', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1727850005779-1e24cac382d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+  { id: '16', name: 'Hot Chocolate', description: 'Rich Belgian chocolate', price: 125, category: 'beverages', display_type: 'regular', is_featured: false, is_promo: false, image: 'https://images.unsplash.com/photo-1727850005809-d575cdcac28c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw0fHxtYXRjaGElMjBsYXR0ZSUyMHRlYXxlbnwxfHx8fDE3Nzc0NjkyMjF8MA&ixlib=rb-4.1.0&q=80&w=1080', available: true, promo_price: null, set_items: null, created_at: '', updated_at: '' },
+];;
 
 const INITIAL_SETTINGS: StoreSettings = {
   heroSlides: [
@@ -134,6 +138,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           image: p.image,
           available: p.available,
           set_items: p.set_items,
+          is_featured: p.is_featured ?? false,
+          is_promo: p.is_promo ?? false,
         })));
       }
     } catch (err) {
@@ -306,6 +312,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           image: product.image,
           available: product.available,
           set_items: product.set_items ?? null,
+          is_featured: product.is_featured ?? false,
+          is_promo: product.is_promo ?? false,
         });
         setProducts((prev) => [...prev, {
           id: created.id,
@@ -318,6 +326,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           image: created.image,
           available: created.available,
           set_items: created.set_items,
+          is_featured: created.is_featured,
+          is_promo: created.is_promo,
         }]);
       } catch (err) {
         console.error('Failed to add product:', err);
@@ -342,6 +352,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           image: product.image,
           available: product.available,
           set_items: product.set_items ?? null,
+          is_featured: product.is_featured,
+          is_promo: product.is_promo,
         });
         setProducts((prev) => prev.map((p) => (p.id === product.id ? {
           id: updated.id,
@@ -354,6 +366,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           image: updated.image,
           available: updated.available,
           set_items: updated.set_items,
+          is_featured: updated.is_featured,
+          is_promo: updated.is_promo,
         } : p)));
       } catch (err) {
         console.error('Failed to update product:', err);

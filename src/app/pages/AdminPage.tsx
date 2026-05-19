@@ -46,9 +46,7 @@ const STATUS_CONFIG: Record<SavedOrder['status'], { label: string; badge: string
 
 const DISPLAY_TYPE_LABELS: Record<DisplayType, { label: string; color: string; icon: React.ReactNode }> = {
   regular:  { label: 'Regular',  color: 'bg-gray-100 text-gray-700',    icon: <Coffee className="w-3.5 h-3.5" /> },
-  promo:    { label: 'Promo',    color: 'bg-red-100 text-red-700',      icon: <Tag className="w-3.5 h-3.5" /> },
   set:      { label: 'Set',      color: 'bg-purple-100 text-purple-700', icon: <Layers className="w-3.5 h-3.5" /> },
-  featured: { label: 'Featured', color: 'bg-amber-100 text-amber-700',  icon: <Star className="w-3.5 h-3.5" /> },
 };
 
 interface ProductModalProps {
@@ -68,6 +66,8 @@ function ProductModal({ product, onSave, onClose }: ProductModalProps) {
     image: product?.image ?? '',
     available: product?.available ?? true,
     set_items: (product?.set_items ?? []) as SetItem[],
+    is_featured: product?.is_featured ?? false,
+    is_promo: product?.is_promo ?? false,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(product?.image ?? '');
@@ -120,12 +120,14 @@ function ProductModal({ product, onSave, onClose }: ProductModalProps) {
       name: form.name.trim(),
       description: form.description.trim(),
       price: parseInt(form.price, 10),
-      promo_price: form.display_type === 'promo' || form.display_type === 'featured' ? (form.promo_price ? parseInt(form.promo_price, 10) : null) : null,
+      promo_price: form.is_promo ? (form.promo_price ? parseInt(form.promo_price, 10) : null) : null,
       category: form.category as Product['category'],
       display_type: form.display_type,
       image: finalImage,
       available: form.available,
       set_items: form.display_type === 'set' ? form.set_items : null,
+      is_featured: form.is_featured,
+      is_promo: form.is_promo,
     });
     onClose();
   };
@@ -225,30 +227,66 @@ function ProductModal({ product, onSave, onClose }: ProductModalProps) {
             </div>
           </div>
 
-          {/* Display Type */}
+          {/* Display Type (Catalog Type) */}
           <div>
-            <label className="text-xs text-gray-500 mb-1.5 block">Display Type</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {(['regular', 'promo', 'set', 'featured'] as DisplayType[]).map((dt) => {
-                const cfg = DISPLAY_TYPE_LABELS[dt];
-                return (
-                  <button
-                    key={dt}
-                    type="button"
-                    onClick={() => setForm({ ...form, display_type: dt })}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs border transition-all ${
-                      form.display_type === dt ? 'border-black bg-black text-white shadow-md' : `border-gray-200 ${cfg.color} hover:border-gray-400`
-                    }`}
-                  >
-                    {cfg.icon}{cfg.label}
-                  </button>
-                );
-              })}
+            <label className="text-xs text-gray-500 mb-1.5 block">Product Structure</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, display_type: 'regular' })}
+                className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                  form.display_type === 'regular'
+                    ? 'border-gray-950 bg-gray-950 text-white shadow-md'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <Coffee className="w-3.5 h-3.5" /> Single Product
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, display_type: 'set' })}
+                className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                  form.display_type === 'set'
+                    ? 'border-purple-600 bg-purple-600 text-white shadow-md'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" /> Set / Combo Bundle
+              </button>
             </div>
           </div>
 
-          {/* Promo Price (shown for promo/featured) */}
-          {(form.display_type === 'promo' || form.display_type === 'featured') && (
+          {/* Marketing Flags */}
+          <div>
+            <label className="text-xs text-gray-500 mb-1.5 block">Marketing & Badges</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, is_promo: !form.is_promo })}
+                className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                  form.is_promo
+                    ? 'border-red-500 bg-red-500 text-white shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <Tag className="w-3.5 h-3.5" /> Promo / Discount
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, is_featured: !form.is_featured })}
+                className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                  form.is_featured
+                    ? 'border-amber-500 bg-amber-500 text-white shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <Star className="w-3.5 h-3.5" /> Featured Spot
+              </button>
+            </div>
+          </div>
+
+          {/* Promo Price (shown if Promo is checked) */}
+          {form.is_promo && (
             <div>
               <label className="text-xs text-gray-500 mb-1.5 block">Promo Price (₱)</label>
               <input
@@ -257,7 +295,7 @@ function ProductModal({ product, onSave, onClose }: ProductModalProps) {
                 placeholder="e.g. 65 (discounted price)"
                 value={form.promo_price}
                 onChange={(e) => setForm({ ...form, promo_price: e.target.value })}
-                className="w-full px-4 py-2.5 bg-red-50 border border-red-200 rounded-xl focus:outline-none focus:border-red-400 transition-colors text-sm"
+                className="w-full px-4 py-2.5 bg-red-50 border border-red-200 rounded-xl focus:outline-none focus:border-red-400 transition-colors text-sm font-medium"
               />
             </div>
           )}
@@ -603,14 +641,23 @@ function MenuManagementSection() {
                 </span>
               </div>
               <p className="text-xs text-gray-400 mb-2 line-clamp-1">{product.description}</p>
-              {product.display_type && product.display_type !== 'regular' && (
-                <div className="mb-2">
-                  <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${DISPLAY_TYPE_LABELS[product.display_type]?.color ?? ''}`}>
-                    {DISPLAY_TYPE_LABELS[product.display_type]?.icon}
-                    {DISPLAY_TYPE_LABELS[product.display_type]?.label}
+              <div className="flex flex-wrap gap-1 mb-2">
+                {product.display_type === 'set' && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                    <Layers className="w-2.5 h-2.5" /> Set
                   </span>
-                </div>
-              )}
+                )}
+                {product.is_promo && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                    <Tag className="w-2.5 h-2.5" /> Promo
+                  </span>
+                )}
+                {product.is_featured && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                    <Star className="w-2.5 h-2.5" /> Featured
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2 mb-3">
                 <p className={`text-sm ${product.promo_price ? 'line-through text-gray-400' : ''}`}>₱{product.price}</p>
                 {product.promo_price && <p className="text-sm text-red-600 font-medium">₱{product.promo_price}</p>}
