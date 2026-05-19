@@ -135,12 +135,12 @@ export async function uploadAssetFile(file: File, folder: string = 'assets'): Pr
   const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
   const { error } = await supabase.storage
-    .from('product-images')
+    .from('notification-sounds')
     .upload(path, file, { cacheControl: '3600', upsert: false });
   if (error) throw error;
 
   const { data } = supabase.storage
-    .from('product-images')
+    .from('notification-sounds')
     .getPublicUrl(path);
 
   return data.publicUrl;
