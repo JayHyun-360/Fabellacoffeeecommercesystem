@@ -23,7 +23,7 @@ import { createClient } from '../../lib/supabase/client';
 
 import { fetchAllProfiles, updateProfileRole } from '../../lib/supabase/auth';
 import type { AppRole, Profile, DisplayType, SetItem } from '../../lib/supabase/database.types';
-import { uploadProductImage } from '../../lib/supabase/products';
+import { uploadProductImage, uploadAssetFile } from '../../lib/supabase/products';
 
 type AdminSection = 'dashboard' | 'menu' | 'transactions' | 'users' | 'settings' | 'manual' | 'privacy';
 
@@ -1465,6 +1465,7 @@ function StoreSettingsSection() {
   const [addingSlide, setAddingSlide] = useState(false);
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [uploadingSlide, setUploadingSlide] = useState(false);
+  const [uploadingSound, setUploadingSound] = useState(false);
 
   const handleSaveInfo = () => {
     updateSettings({
@@ -1479,6 +1480,7 @@ function StoreSettingsSection() {
       gcashNumber: info.gcashNumber,
       gcashName: info.gcashName,
       gcashQrCode: info.gcashQrCode,
+      notificationSoundUrl: info.notificationSoundUrl,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -1683,6 +1685,64 @@ function StoreSettingsSection() {
                   )}
                 </div>
                 <p className="text-xs text-gray-400">Supported formats: JPG, PNG, WebP. Max 5MB.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Custom Notification Sound Uploader */}
+          <div className="sm:col-span-2 border-t border-gray-150 pt-5 mt-2 space-y-3">
+            <label className="text-sm font-medium text-gray-800 block">Custom Order Notification Sound</label>
+            <div className="flex items-center gap-5">
+              {info.notificationSoundUrl ? (
+                <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-2xl flex-shrink-0">
+                  <audio src={info.notificationSoundUrl} controls className="h-8 max-w-[200px]" />
+                </div>
+              ) : (
+                <div className="px-4 py-3 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
+                  Default Crystal Bells
+                </div>
+              )}
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <input
+                  type="file"
+                  accept="audio/mp3,audio/wav,audio/mpeg"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingSound(true);
+                    try {
+                      const url = await uploadAssetFile(file, 'sounds');
+                      setInfo((prev) => ({ ...prev, notificationSoundUrl: url }));
+                      alert('Custom notification sound uploaded successfully!');
+                    } catch (err) {
+                      console.error('Notification sound upload failed:', err);
+                      alert('Failed to upload custom sound.');
+                    } finally {
+                      setUploadingSound(false);
+                    }
+                  }}
+                  className="hidden"
+                  id="notif-sound-upload"
+                  disabled={uploadingSound}
+                />
+                <div className="flex gap-2">
+                  <label
+                    htmlFor="notif-sound-upload"
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 hover:border-black rounded-full text-xs font-medium transition-all"
+                  >
+                    {uploadingSound ? 'Uploading...' : 'Upload MP3 / WAV'}
+                  </label>
+                  {info.notificationSoundUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setInfo((prev) => ({ ...prev, notificationSoundUrl: '' }))}
+                      className="px-4 py-2 border border-red-200 hover:border-red-500 text-red-500 hover:bg-red-50 rounded-full text-xs font-medium transition-all"
+                    >
+                      Reset to Default
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400">Upload a short sound file (.mp3, .wav) to play when new orders arrive. Max 5MB.</p>
               </div>
             </div>
           </div>

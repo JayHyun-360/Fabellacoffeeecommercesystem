@@ -55,6 +55,7 @@ export interface StoreSettings {
   gcashNumber: string;
   gcashName: string;
   gcashQrCode: string;
+  notificationSoundUrl?: string;
 }
 
 const INITIAL_PRODUCTS: Product[] = [
@@ -93,6 +94,7 @@ const INITIAL_SETTINGS: StoreSettings = {
   gcashNumber: '+63 917 123 4567',
   gcashName: 'Fabella Coffee',
   gcashQrCode: '',
+  notificationSoundUrl: '',
 };
 
 interface AppContextType {
@@ -135,46 +137,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const playChime = useCallback(() => {
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-      
-      // Resume context if suspended (browser security requirement)
-      if (ctx.state === 'suspended') {
-        ctx.resume();
+      if (settings.notificationSoundUrl) {
+        const audio = new Audio(settings.notificationSoundUrl);
+        audio.play().catch((audioErr) => {
+          console.warn("Failed to play custom MP3 notification sound, falling back to synthesized chime:", audioErr);
+          playSynthesizedChime();
+        });
+        return;
       }
-
-      const now = ctx.currentTime;
-      
-      const playBellTone = (freq: number, startTime: number, maxGain: number, duration: number) => {
-        const osc = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-        
-        // Sine wave for pure, soft bell tones
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now + startTime);
-        
-        // Soft Attack - gentle linear ramp up to avoid clicks or hard hits
-        gainNode.gain.setValueAtTime(0, now + startTime);
-        gainNode.gain.linearRampToValueAtTime(maxGain, now + startTime + 0.03);
-        // Smooth exponential decay
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + startTime + duration);
-        
-        osc.connect(gainNode);
-        gainNode.connect(ctx.destination);
-        
-        osc.start(now + startTime);
-        osc.stop(now + startTime + duration + 0.15);
-      };
-
-      // Sparkling high-pitched crystal bells (G-major triad chord)
-      playBellTone(1567.98, 0.0, 0.07, 1.5); // G6 crystal bell
-      playBellTone(1975.53, 0.15, 0.05, 1.2); // B6 crystal bell
-      playBellTone(2349.32, 0.3, 0.04, 1.8); // D7 crystal bell
+      playSynthesizedChime();
     } catch (e) {
       console.warn("Audio autoplay blocked or unsupported by browser policy", e);
     }
-  }, []);
+
+    function playSynthesizedChime() {
+      try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        
+        // Resume context if suspended (browser security requirement)
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+
+        const now = ctx.currentTime;
+        
+        const playBellTone = (freq: number, startTime: number, maxGain: number, duration: number) => {
+          const osc = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+          
+          // Sine wave for pure, soft bell tones
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + startTime);
+          
+          // Soft Attack - gentle linear ramp up to avoid clicks or hard hits
+          gainNode.gain.setValueAtTime(0, now + startTime);
+          gainNode.gain.linearRampToValueAtTime(maxGain, now + startTime + 0.03);
+          // Smooth exponential decay
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, now + startTime + duration);
+          
+          osc.connect(gainNode);
+          gainNode.connect(ctx.destination);
+          
+          osc.start(now + startTime);
+          osc.stop(now + startTime + duration + 0.15);
+        };
+
+        // Sparkling high-pitched crystal bells (G-major triad chord)
+        playBellTone(1567.98, 0.0, 0.07, 1.5); // G6 crystal bell
+        playBellTone(1975.53, 0.15, 0.05, 1.2); // B6 crystal bell
+        playBellTone(2349.32, 0.3, 0.04, 1.8); // D7 crystal bell
+      } catch (err) {
+        console.warn("Failed to play synthesized chime:", err);
+      }
+    }
+  }, [settings.notificationSoundUrl]);
 
   const clearUnreadOrders = useCallback(() => setUnreadOrderCount(0), []);
   const clearLatestNotification = useCallback(() => setLatestNotification(null), []);
@@ -225,6 +243,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           gcashNumber: dbSettings.gcash_number || '+63 917 123 4567',
           gcashName: dbSettings.gcash_name || 'Fabella Coffee',
           gcashQrCode: dbSettings.gcash_qr_code || '',
+          notificationSoundUrl: dbSettings.notification_sound_url || '',
         });
       }
     } catch (err) {
@@ -302,7 +321,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               setLatestNotification({
                 id: newOrder.id,
                 title: '🔔 New Order Received',
-                body: `Queue #Q-${newOrder.queue_number ? newOrder.queue_number.toString().padStart(4, '0') : '0000'} — ${newOrder.customer_name || 'Customer'}`
+                body: `${newOrder.customer_name || 'Customer'} placed an order (${newOrder.order_type === 'delivery' ? '🚗 Delivery' : '☕ Pickup'})`
               });
             }
           }
@@ -515,6 +534,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           gcash_name: newSettings.gcashName,
           gcash_qr_code: newSettings.gcashQrCode,
           hero_slides: newSettings.heroSlides,
+          notification_sound_url: newSettings.notificationSoundUrl,
         } as any);
       } catch (err) {
         console.error('Failed to save settings:', err);

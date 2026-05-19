@@ -83,6 +83,7 @@ export interface StoreSettings {
   gcash_number: string;
   gcash_name: string;
   gcash_qr_code: string | null;
+  notification_sound_url: string | null;
   updated_at: string;
 }
 
