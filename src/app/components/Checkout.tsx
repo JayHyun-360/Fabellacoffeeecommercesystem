@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronRight, ChevronLeft, MapPin, Phone, Mail, User, Check, Package, Truck, CreditCard, Smartphone, Banknote, Store, UtensilsCrossed, ShoppingBag, LogIn } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, MapPin, Phone, Mail, User, Check, Package, Truck, Smartphone, Banknote, Store, UtensilsCrossed, ShoppingBag, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import type { SavedOrder } from './OrderHistory';
@@ -20,7 +20,7 @@ interface CheckoutProps {
 }
 
 type DeliveryType = 'delivery' | 'pickup' | 'dine-in' | 'takeout';
-type PaymentMethod = 'cod' | 'gcash' | 'card';
+type PaymentMethod = 'cod' | 'gcash';
 
 interface OrderDetails {
   name: string;
@@ -330,7 +330,6 @@ function PaymentStep({ details, items, onChange, onNext, onBack }: {
   const paymentOptions: { value: PaymentMethod; label: string; icon: React.ReactNode; desc: string }[] = [
     { value: 'cod', label: 'Cash', icon: <Banknote className="w-5 h-5" />, desc: codDesc },
     { value: 'gcash', label: 'GCash', icon: <Smartphone className="w-5 h-5" />, desc: 'Send payment via GCash mobile wallet' },
-    { value: 'card', label: 'Credit / Debit Card', icon: <CreditCard className="w-5 h-5" />, desc: 'Visa, Mastercard, and more' },
   ];
 
   return (
@@ -377,33 +376,7 @@ function PaymentStep({ details, items, onChange, onNext, onBack }: {
           </div>
         )}
 
-        {details.paymentMethod === 'card' && (
-          <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
-            <input
-              type="text"
-              placeholder="Card Number"
-              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-black transition-colors text-sm"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="text"
-                placeholder="MM / YY"
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-black transition-colors text-sm"
-              />
-              <input
-                type="text"
-                placeholder="CVV"
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-black transition-colors text-sm"
-              />
-            </div>
-            <input
-              type="text"
-              placeholder="Cardholder Name"
-              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-black transition-colors text-sm"
-            />
-            <p className="text-xs text-gray-400 text-center">Demo only — no actual payment is processed.</p>
-          </div>
-        )}
+
 
         <div className="mt-4 bg-gray-50 rounded-2xl p-4 space-y-2">
           <div className="flex justify-between text-sm text-gray-600">
@@ -459,7 +432,6 @@ function OrderConfirmation({ details, items, orderNumber, onClose }: {
   const paymentLabels: Record<PaymentMethod, string> = {
     cod: 'Cash',
     gcash: 'GCash',
-    card: 'Credit / Debit Card',
   };
 
   const estTime =
