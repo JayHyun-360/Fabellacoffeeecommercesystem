@@ -518,7 +518,7 @@ function DashboardSection() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-400 border-b border-gray-50">
-                  <th className="text-left pb-3 font-normal">Order #</th>
+                  <th className="text-left pb-3 font-normal">Queue #</th>
                   <th className="text-left pb-3 font-normal">Customer</th>
                   <th className="text-left pb-3 font-normal hidden sm:table-cell">Date</th>
                   <th className="text-right pb-3 font-normal">Total</th>
@@ -1033,7 +1033,7 @@ function TransactionsSection() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by name or order #…"
+            placeholder="Search by name or queue #…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-black transition-colors"

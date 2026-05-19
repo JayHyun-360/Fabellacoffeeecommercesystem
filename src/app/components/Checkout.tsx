@@ -505,9 +505,9 @@ function OrderConfirmation({ details, items, orderNumber, onClose }: {
           <p className="text-gray-500 text-sm">Thank you, {details.name.split(' ')[0]}!</p>
         </div>
 
-        {/* Order Number */}
+        {/* Queue Number */}
         <div className="bg-gray-50 rounded-2xl p-5 mb-5 text-center">
-          <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Order Number</p>
+          <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Queue Number</p>
           <p className="text-2xl tracking-widest">{orderNumber}</p>
         </div>
 
@@ -590,6 +590,23 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
       }));
     }
   }, [isOpen, user]);
+
+  // Reset state when checkout modal is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setStep(0);
+      setDetails({
+        name: '',
+        phone: '',
+        email: '',
+        address: '',
+        city: '',
+        notes: '',
+        deliveryType: 'delivery',
+        paymentMethod: 'cod',
+      });
+    }
+  }, [isOpen]);
 
   const handleChange = (field: keyof OrderDetails, value: string) => {
     setDetails((prev) => ({ ...prev, [field]: value }));

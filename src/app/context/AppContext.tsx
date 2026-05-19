@@ -137,22 +137,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gainNode = ctx.createGain();
+      const now = ctx.currentTime;
       
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
-      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.1);
-      
-      gainNode.gain.setValueAtTime(0, ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
-      
-      osc.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      osc.start();
-      osc.stop(ctx.currentTime + 1);
+      // Synthesize a rich metallic bell chime with overtones: fundamental 880Hz (A5)
+      // and overtones at non-harmonic ratios to emulate a premium mechanical chime vibration
+      const frequencies = [880, 1056, 1320, 1760, 2200, 2296];
+      const gains = [0.25, 0.12, 0.08, 0.05, 0.03, 0.02];
+      const decays = [1.8, 1.4, 1.0, 0.7, 0.5, 0.4];
+
+      frequencies.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        
+        // Attack
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(gains[idx], now + 0.008);
+        // Exponential decay
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + decays[idx]);
+        
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        osc.start(now);
+        osc.stop(now + decays[idx] + 0.1);
+      });
     } catch (e) {
       console.warn("Audio autoplay blocked by browser policy");
     }

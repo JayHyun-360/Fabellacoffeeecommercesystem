@@ -94,7 +94,7 @@ function GCashQRModal({ amount, customerName, onClose, onMarkPaid }: {
 }
 
 // ─── Staff Order Card ─────────────────────────────────────────────────────────
-function StaffOrderCard({ order, queueNum }: { order: SavedOrder; queueNum: number }) {
+function StaffOrderCard({ order, queueNum }: { order: SavedOrder; queueNum: string }) {
   const { updateOrderStatus } = useApp();
   const [expanded, setExpanded] = useState(false);
   const [showGCashQR, setShowGCashQR] = useState(false);
@@ -136,13 +136,13 @@ function StaffOrderCard({ order, queueNum }: { order: SavedOrder; queueNum: numb
         >
           <div className="flex items-start gap-4">
             {/* Rounded Queue Badge */}
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 text-base font-bold shadow-sm ${
+            <div className={`px-2.5 py-1.5 h-12 min-w-[3rem] rounded-2xl flex items-center justify-center flex-shrink-0 text-sm font-bold shadow-sm ${
               order.status === 'pending' ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' :
               order.status === 'ongoing' ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white' :
               order.status === 'received' ? 'bg-gradient-to-br from-emerald-400 to-green-500 text-white' :
               'bg-gray-100 text-gray-400'
             }`}>
-              #{queueNum}
+              {queueNum}
             </div>
 
             <div className="flex-1 min-w-0">
@@ -512,8 +512,8 @@ export function StaffPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-            {sorted.map((order, idx) => (
-              <StaffOrderCard key={order.orderNumber} order={order} queueNum={idx + 1} />
+            {sorted.map((order) => (
+              <StaffOrderCard key={order.orderNumber} order={order} queueNum={order.orderNumber} />
             ))}
           </div>
         )}
