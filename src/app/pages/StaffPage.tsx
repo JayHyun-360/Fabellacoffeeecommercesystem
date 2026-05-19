@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { StaffLegalFAQ } from '../components/StaffLegalFAQ';
 import type { SavedOrder } from '../components/OrderHistory';
 import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
 
@@ -427,9 +428,12 @@ export function StaffPage() {
               </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-              <Clock className="w-3.5 h-3.5 text-gray-300" />
-              <span className="text-sm text-gray-200">{dateStr} · {timeStr}</span>
+            <div className="hidden md:flex items-center gap-3">
+              <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+                <Clock className="w-3.5 h-3.5 text-gray-300" />
+                <span className="text-sm text-gray-200">{dateStr} · {timeStr}</span>
+              </div>
+              <StaffLegalFAQ />
             </div>
 
             <div className="flex items-center gap-2">

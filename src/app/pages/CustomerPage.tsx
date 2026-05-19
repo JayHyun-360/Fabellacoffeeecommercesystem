@@ -11,6 +11,7 @@ import { SearchModal } from '../components/SearchModal';
 import { useApp, type Product } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import type { SavedOrder } from '../components/OrderHistory';
+import { CustomerLegalFAQ } from '../components/CustomerLegalFAQ';
 
 interface CartItem extends Product {
   quantity: number;
@@ -151,6 +152,8 @@ export function CustomerPage() {
         products={availableProducts.filter((p) => p.category === 'beverages')}
         onAddToCart={addToCart}
       />
+
+      <CustomerLegalFAQ />
 
       <footer className="bg-gray-50/80 py-12 px-6 mt-20">
         <div className="max-w-7xl mx-auto">

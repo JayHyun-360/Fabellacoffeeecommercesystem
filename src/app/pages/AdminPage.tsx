@@ -17,6 +17,7 @@ import {
 import { useApp, type Product, type HeroSlide } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import type { SavedOrder } from '../components/OrderHistory';
+import { AdminLegalFAQ } from '../components/AdminLegalFAQ';
 import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
 import { createClient } from '../../lib/supabase/client';
 
@@ -1862,8 +1863,8 @@ export function AdminPage() {
           ))}
         </nav>
 
-        {/* Preview Store link */}
-        <div className="px-5 pb-2">
+        {/* Preview Store link & Admin FAQ */}
+        <div className="px-5 pb-2 flex flex-col gap-2">
           <button
             onClick={() => router.push('/')}
             className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm text-gray-600 hover:bg-gray-50 hover:shadow-sm transition-all"
@@ -1871,6 +1872,9 @@ export function AdminPage() {
             <Eye className="w-5 h-5" />
             Preview Store
           </button>
+          <div className="px-2">
+            <AdminLegalFAQ />
+          </div>
         </div>
 
         {/* Profile / Sign Out */}
