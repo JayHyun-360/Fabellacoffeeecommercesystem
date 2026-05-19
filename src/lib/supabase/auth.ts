@@ -8,13 +8,13 @@ import type { Session, User } from '@supabase/supabase-js';
 
 export function getRoleFromSession(session: Session | null): AppRole {
   if (!session) return 'customer';
-  const role = session.user.user_metadata?.role as AppRole | undefined;
+  const role = (session.user.app_metadata?.role || session.user.user_metadata?.role) as AppRole | undefined;
   return role ?? 'customer';
 }
 
 export function getRoleFromUser(user: User | null): AppRole {
   if (!user) return 'customer';
-  const role = user.user_metadata?.role as AppRole | undefined;
+  const role = (user.app_metadata?.role || user.user_metadata?.role) as AppRole | undefined;
   return role ?? 'customer';
 }
 

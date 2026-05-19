@@ -26,6 +26,7 @@ export function CustomerPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -98,6 +99,7 @@ export function CustomerPage() {
         onCartClick={isAdmin ? undefined : () => setCartOpen(true)}
         onHistoryClick={() => setHistoryOpen(true)}
         onSearchClick={() => setSearchOpen(true)}
+        onFAQClick={() => setFaqOpen(true)}
       />
 
       {isAdmin && (
@@ -153,7 +155,7 @@ export function CustomerPage() {
         onAddToCart={addToCart}
       />
 
-      <CustomerLegalFAQ />
+      <CustomerLegalFAQ isOpen={faqOpen} onClose={() => setFaqOpen(false)} />
 
       <footer className="bg-gray-50/80 py-12 px-6 mt-20">
         <div className="max-w-7xl mx-auto">

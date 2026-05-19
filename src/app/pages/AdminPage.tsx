@@ -9,7 +9,7 @@ import {
   Eye, EyeOff, X, Check, Search, Image, ChevronDown, ChevronUp,
   BarChart3, Star, AlertCircle, Upload, Tag, Layers, Menu,
   Banknote, Smartphone, CreditCard, Users2, Shield, UserCog,
-  User, LogOut, FolderArchive, History, Clock
+  User, LogOut, FolderArchive, History, Clock, BookOpen
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
@@ -17,7 +17,7 @@ import {
 import { useApp, type Product, type HeroSlide } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import type { SavedOrder } from '../components/OrderHistory';
-import { AdminLegalFAQ } from '../components/AdminLegalFAQ';
+import { AdminSystemManual, AdminDataGovernance } from '../components/AdminLegalFAQ';
 import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
 import { createClient } from '../../lib/supabase/client';
 
@@ -25,7 +25,7 @@ import { fetchAllProfiles, updateProfileRole } from '../../lib/supabase/auth';
 import type { AppRole, Profile, DisplayType, SetItem } from '../../lib/supabase/database.types';
 import { uploadProductImage } from '../../lib/supabase/products';
 
-type AdminSection = 'dashboard' | 'menu' | 'transactions' | 'users' | 'settings';
+type AdminSection = 'dashboard' | 'menu' | 'transactions' | 'users' | 'settings' | 'manual' | 'privacy';
 
 const CATEGORY_LABELS: Record<string, string> = {
   coffee: 'Coffee', food: 'Food', pastries: 'Pastries', beverages: 'Beverages',
@@ -1819,6 +1819,8 @@ export function AdminPage() {
     { key: 'transactions', label: 'Transactions', icon: <Receipt className="w-5 h-5" /> },
     { key: 'users', label: 'Users', icon: <Users2 className="w-5 h-5" /> },
     { key: 'settings', label: 'Store Settings', icon: <Settings className="w-5 h-5" /> },
+    { key: 'manual', label: 'System Manual', icon: <BookOpen className="w-5 h-5" /> },
+    { key: 'privacy', label: 'Data Governance', icon: <Shield className="w-5 h-5" /> },
   ];
 
   return (
@@ -1872,9 +1874,6 @@ export function AdminPage() {
             <Eye className="w-5 h-5" />
             Preview Store
           </button>
-          <div className="px-2">
-            <AdminLegalFAQ />
-          </div>
         </div>
 
         {/* Profile / Sign Out */}
@@ -1938,6 +1937,8 @@ export function AdminPage() {
             {section === 'transactions' && <TransactionsSection />}
             {section === 'users' && <UsersManagementSection />}
             {section === 'settings' && <StoreSettingsSection />}
+            {section === 'manual' && <AdminSystemManual />}
+            {section === 'privacy' && <AdminDataGovernance />}
           </div>
         </main>
 

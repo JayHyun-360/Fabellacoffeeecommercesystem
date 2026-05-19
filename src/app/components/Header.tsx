@@ -1,4 +1,4 @@
-import { ShoppingCart, Menu, X, Search, History, Users2, Coffee, ShieldCheck, ChevronRight, LogIn, LogOut, User } from 'lucide-react';
+import { ShoppingCart, Menu, X, Search, History, Users2, Coffee, ShieldCheck, ChevronRight, LogIn, LogOut, User, HelpCircle } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import logoImg from '../../imports/682349994_793900143580024_743914547050463231_n.png';
@@ -9,9 +9,10 @@ interface HeaderProps {
   onCartClick?: () => void;
   onHistoryClick: () => void;
   onSearchClick: () => void;
+  onFAQClick: () => void;
 }
 
-export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }: HeaderProps) {
+export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick, onFAQClick }: HeaderProps) {
   const router = useRouter();
   const { user, isAdmin, isStaff, isAnonymous, loginWithGoogle, linkGoogle, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -28,11 +29,12 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
             <span className="text-sm tracking-tight font-medium">FABELLA COFFEE</span>
           </a>
 
-          <nav className="hidden md:flex gap-8">
+          <nav className="hidden md:flex gap-8 items-center">
             <a href="#coffee" className="hover:opacity-60 transition-opacity text-sm">Coffee</a>
             <a href="#food" className="hover:opacity-60 transition-opacity text-sm">Food</a>
             <a href="#pastries" className="hover:opacity-60 transition-opacity text-sm">Pastries</a>
             <a href="#beverages" className="hover:opacity-60 transition-opacity text-sm">Beverages</a>
+            <button onClick={onFAQClick} className="hover:opacity-60 transition-opacity text-sm font-semibold text-black">FAQ & Policies</button>
           </nav>
         </div>
 
@@ -102,6 +104,11 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick }
           <a href="#beverages" onClick={() => setMobileMenuOpen(false)} className="hover:opacity-60 transition-opacity py-2">Beverages</a>
 
           <div className="border-t border-gray-200 pt-4 mt-2 space-y-1">
+            <button onClick={() => { onFAQClick(); setMobileMenuOpen(false); }}
+              className="w-full flex items-center gap-3 hover:opacity-60 transition-opacity py-2 text-black font-semibold">
+              <HelpCircle className="w-5 h-5 text-gray-500" /><span>FAQ & Policies</span>
+            </button>
+
             <button onClick={() => { onHistoryClick(); setMobileMenuOpen(false); }}
               className="w-full flex items-center gap-3 hover:opacity-60 transition-opacity py-2">
               <History className="w-5 h-5" /><span>Order History</span>
