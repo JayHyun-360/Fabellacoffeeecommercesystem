@@ -111,6 +111,10 @@ interface AppContextType {
   updateHeroSlide: (id: string, updates: Partial<HeroSlide>) => Promise<void>;
   addHeroSlide: (slide: Omit<HeroSlide, 'id'>) => Promise<void>;
   removeHeroSlide: (id: string) => Promise<void>;
+  unreadOrderCount: number;
+  latestNotification: { title: string; body: string; id: string } | null;
+  clearUnreadOrders: () => void;
+  clearLatestNotification: () => void;
 }
 
 const AppContext = createContext<AppContextType>(null!);
@@ -120,6 +124,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<SavedOrder[]>([]);
   const [settings, setSettings] = useState<StoreSettings>(INITIAL_SETTINGS);
   const [productsLoading, setProductsLoading] = useState(false);
+  const [unreadOrderCount, setUnreadOrderCount] = useState(0);
+  const [latestNotification, setLatestNotification] = useState<{ title: string; body: string; id: string } | null>(null);
+
+  // A very short, pleasant generic bell chime in base64 to avoid external asset loading issues
+  const chimeBase64 = "data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"; 
+  // (Note: The above is a tiny silent stub to prevent crash if not perfectly generated, we will use a browser AudioContext oscillator for a perfect guaranteed chime instead to keep the file size pristine).
+
+  const playChime = useCallback(() => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
+      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+      
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 1);
+    } catch (e) {
+      console.warn("Audio autoplay blocked by browser policy");
+    }
+  }, []);
+
+  const clearUnreadOrders = useCallback(() => setUnreadOrderCount(0), []);
+  const clearLatestNotification = useCallback(() => setLatestNotification(null), []);
 
   const refreshProducts = useCallback(async () => {
     if (!isSupabaseConfigured) return;
@@ -223,7 +261,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshProducts();
     refreshSettings();
     refreshOrders();
-  }, [refreshProducts, refreshSettings, refreshOrders]);
+
+    if (isSupabaseConfigured) {
+      const supabase = createClient();
+      
+      // Listen for NEW orders via Supabase Realtime
+      const channel = supabase.channel('realtime_orders')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'orders' },
+          (payload) => {
+            const newOrder = payload.new;
+            
+            // Refresh to grab full data (including joined items)
+            refreshOrders();
+            
+            // Trigger Notifications
+            playChime();
+            setUnreadOrderCount(prev => prev + 1);
+            setLatestNotification({
+              id: newOrder.id,
+              title: '🔔 New Order Received',
+              body: `Queue #Q-${newOrder.queue_number.toString().padStart(4, '0')} — ${newOrder.customer_name || 'Customer'}`
+            });
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [refreshProducts, refreshSettings, refreshOrders, playChime]);
 
   const addOrder = async (order: SavedOrder): Promise<SavedOrder> => {
     let finalOrder = order;
@@ -463,6 +532,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider
       value={{
         products, orders, settings, productsLoading,
+        unreadOrderCount, latestNotification, clearUnreadOrders, clearLatestNotification,
         addOrder, updateOrderStatus,
         addProduct, updateProduct, deleteProduct, toggleProductAvailability, refreshProducts, refreshOrders,
         updateSettings, updateHeroSlide, addHeroSlide, removeHeroSlide,

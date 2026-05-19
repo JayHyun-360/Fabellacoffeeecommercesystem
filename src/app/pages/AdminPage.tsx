@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard, UtensilsCrossed, Receipt, Settings, ArrowLeft,
   TrendingUp, ShoppingBag, Coffee, Package, Plus, Pencil, Trash2,
-  Eye, EyeOff, X, Check, Search, Image, ChevronDown, ChevronUp,
+  Eye, EyeOff, X, Check, CheckCircle, Search, Image, ChevronDown, ChevronUp,
   BarChart3, Star, AlertCircle, Upload, Tag, Layers, Menu,
   Banknote, Smartphone, CreditCard, Users2, Shield, UserCog,
   User, LogOut, FolderArchive, History, Clock, BookOpen
@@ -1810,8 +1810,19 @@ function SlideEditor({ slide, index, canDelete, onUpdate, onDelete }: {
 export function AdminPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { unreadOrderCount, latestNotification, clearUnreadOrders, clearLatestNotification } = useApp();
   const [section, setSection] = useState<AdminSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (latestNotification) {
+      const timer = setTimeout(() => {
+        clearLatestNotification();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [latestNotification, clearLatestNotification]);
 
   const navItems: { key: AdminSection; label: string; icon: React.ReactNode }[] = [
     { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -1852,15 +1863,26 @@ export function AdminPage() {
           {navItems.map((item) => (
             <button
               key={item.key}
-              onClick={() => { setSection(item.key); setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm transition-all ${
+              onClick={() => { 
+                setSection(item.key); 
+                setSidebarOpen(false); 
+                if (item.key === 'dashboard') clearUnreadOrders();
+              }}
+              className={`w-full flex items-center justify-between px-5 py-3.5 rounded-2xl text-sm transition-all ${
                 section === item.key
                   ? 'bg-gradient-to-br from-gray-900 to-black text-white shadow-lg scale-105'
                   : 'text-gray-600 hover:bg-gray-50 hover:shadow-sm'
               }`}
             >
-              {item.icon}
-              {item.label}
+              <div className="flex items-center gap-3">
+                {item.icon}
+                {item.label}
+              </div>
+              {item.key === 'dashboard' && unreadOrderCount > 0 && (
+                <div className="flex items-center justify-center w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full animate-bounce shadow-md shadow-red-500/20">
+                  {unreadOrderCount}
+                </div>
+              )}
             </button>
           ))}
         </nav>
@@ -1943,21 +1965,45 @@ export function AdminPage() {
         </main>
 
         {/* Bottom nav (mobile) */}
-        <nav className="lg:hidden bg-white border-t border-gray-100 flex flex-shrink-0">
+        <nav className="lg:hidden bg-white border-t border-gray-100 flex flex-shrink-0 relative z-40">
           {navItems.map((item) => (
             <button
               key={item.key}
-              onClick={() => setSection(item.key)}
-              className={`flex-1 flex flex-col items-center py-3 gap-0.5 text-xs transition-colors ${
+              onClick={() => {
+                setSection(item.key);
+                if (item.key === 'dashboard') clearUnreadOrders();
+              }}
+              className={`flex-1 flex flex-col items-center py-3 gap-0.5 text-xs transition-colors relative ${
                 section === item.key ? 'text-black' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
+              {item.key === 'dashboard' && unreadOrderCount > 0 && (
+                <span className="absolute top-2 right-1/4 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+              )}
               {item.icon}
               <span className="hidden sm:block">{item.label.split(' ')[0]}</span>
             </button>
           ))}
         </nav>
       </div>
+
+      {/* Global Toast Notification */}
+      {latestNotification && (
+        <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-5 fade-in duration-300">
+          <div className="bg-white/90 backdrop-blur-xl border border-gray-200/50 p-4 rounded-2xl shadow-2xl flex items-start gap-4 max-w-sm w-[90vw] sm:w-auto">
+            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="w-5 h-5 text-blue-500" />
+            </div>
+            <div className="flex-1 min-w-0 pr-4">
+              <p className="text-sm font-bold text-gray-900">{latestNotification.title}</p>
+              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed truncate">{latestNotification.body}</p>
+            </div>
+            <button onClick={clearLatestNotification} className="text-gray-400 hover:text-gray-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
