@@ -47,6 +47,9 @@ export interface StoreSettings {
   weekendHours: string;
   announcement: string;
   deliveryFee: number;
+  gcashNumber: string;
+  gcashName: string;
+  gcashQrCode: string;
 }
 
 const INITIAL_PRODUCTS: Product[] = [
@@ -82,6 +85,9 @@ const INITIAL_SETTINGS: StoreSettings = {
   weekendHours: '7am - 11pm',
   announcement: '',
   deliveryFee: 49,
+  gcashNumber: '+63 917 123 4567',
+  gcashName: 'Fabella Coffee',
+  gcashQrCode: '',
 };
 
 interface AppContextType {
@@ -89,7 +95,7 @@ interface AppContextType {
   orders: SavedOrder[];
   settings: StoreSettings;
   productsLoading: boolean;
-  addOrder: (order: SavedOrder) => void;
+  addOrder: (order: SavedOrder) => Promise<SavedOrder>;
   updateOrderStatus: (orderNumber: string, status: SavedOrder['status']) => void;
   addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
@@ -152,6 +158,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           weekendHours: dbSettings.weekend_hours,
           announcement: dbSettings.announcement || '',
           deliveryFee: Number(dbSettings.delivery_fee) || 49,
+          gcashNumber: dbSettings.gcash_number || '+63 917 123 4567',
+          gcashName: dbSettings.gcash_name || 'Fabella Coffee',
+          gcashQrCode: dbSettings.gcash_qr_code || '',
         });
       }
     } catch (err) {
@@ -189,8 +198,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             deliveryType: order.order_type,
             paymentMethod: order.payment_method,
             name: order.customer_name,
+            phone: order.customer_phone || undefined,
+            email: order.customer_email || undefined,
             address: order.delivery_address || undefined,
             city: '',
+            notes: order.notes || undefined,
             status: order.status === 'completed' ? 'received' : order.status,
           };
         });
@@ -207,26 +219,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshOrders();
   }, [refreshProducts, refreshSettings, refreshOrders]);
 
-  const addOrder = async (order: SavedOrder) => {
-    // Optimistic UI update
-    setOrders((prev) => [order, ...prev]);
+  const addOrder = async (order: SavedOrder): Promise<SavedOrder> => {
+    let finalOrder = order;
 
     if (isSupabaseConfigured) {
       try {
         const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
         
-        await createOrder({
+        await refreshOrders(); // Pull latest to prevent race
+        const created = await createOrder({
           customer_name: order.name,
           customer_id: session?.user?.id,
           customer_email: session?.user?.email,
-          order_type: order.deliveryType,
-          payment_method: order.paymentMethod,
+          customer_phone: order.phone || undefined,
+          order_type: order.deliveryType as any,
+          payment_method: order.paymentMethod as any,
           delivery_address: order.address ? `${order.address}, ${order.city || ''}` : undefined,
-          // Extract the first number from the random queue string or fallback to 0
-          queue_number: parseInt(order.orderNumber.replace(/[^0-9]/g, '')) || 0,
+          notes: order.notes,
           items: order.items.map(item => {
-            // Check if the item ID is a valid UUID, otherwise pass null
             const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
             return {
               product_id: isValidUUID ? item.id : undefined,
@@ -235,11 +246,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
               quantity: item.quantity,
             };
           }),
-        });
+        } as any);
+
+        if (created) {
+          finalOrder = {
+            ...order,
+            id: created.id,
+            orderNumber: `Q-${created.queue_number.toString().padStart(4, '0')}`,
+          };
+        }
       } catch (err) {
         console.error('Failed to save order to Supabase:', err);
       }
+    } else {
+      const mockQueue = Math.floor(Math.random() * 900) + 100;
+      finalOrder = {
+        ...order,
+        orderNumber: `Q-${mockQueue.toString().padStart(4, '0')}`,
+      };
     }
+
+    setOrders((prev) => [finalOrder, ...prev]);
+    return finalOrder;
   };
 
   const updateOrderStatus = async (orderNumber: string, status: SavedOrder['status']) => {
@@ -378,8 +406,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           weekday_hours: newSettings.weekdayHours,
           weekend_hours: newSettings.weekendHours,
           announcement: newSettings.announcement,
-          hero_slides: newSettings.heroSlides,
           delivery_fee: newSettings.deliveryFee,
+          gcash_number: newSettings.gcashNumber,
+          gcash_name: newSettings.gcashName,
+          gcash_qr_code: newSettings.gcashQrCode,
+          hero_slides: newSettings.heroSlides,
         } as any);
       } catch (err) {
         console.error('Failed to save settings:', err);

@@ -12,8 +12,11 @@ export interface SavedOrder {
   deliveryType: 'delivery' | 'pickup' | 'dine-in' | 'takeout';
   paymentMethod: 'cod' | 'gcash' | 'card';
   name: string;
+  phone?: string;
+  email?: string;
   address?: string;
   city?: string;
+  notes?: string;
   status: 'pending' | 'cancelled' | 'ongoing' | 'received';
 }
 

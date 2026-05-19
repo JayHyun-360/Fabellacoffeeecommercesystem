@@ -810,24 +810,22 @@ function TransactionsSection() {
   };
 
   const handleClearActiveTransactions = async () => {
-    if (!confirm("⚠️ DANGER: This will permanently delete ALL active orders and transactions from BOTH your screen and your database! This action cannot be undone.\n\nAre you sure you want to clear active transactions?")) {
+    if (!confirm("⚠️ DANGER: This will permanently delete ALL active orders and transactions from BOTH your screen and your database, and reset the order queue sequence to #1! This action cannot be undone.\n\nAre you sure you want to clear active transactions?")) {
       return;
     }
     
     try {
       const supabase = createClient();
-      const { error } = await (supabase.from('orders') as any)
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+      const { error } = await supabase.rpc('clear_active_orders');
       if (error) throw error;
       
-      alert("Active transaction history successfully wiped!");
+      alert("Active transaction history successfully wiped and queue counter reset to #1!");
       if (refreshOrders) {
         await refreshOrders();
       }
     } catch (err) {
       console.error("Failed to clear transactions:", err);
-      alert("Failed to clear transactions. Please make sure the orders table exists and is connected.");
+      alert("Failed to clear transactions. Please make sure the 'clear_active_orders' RPC is configured in Supabase.");
     }
   };
 
@@ -1414,6 +1412,7 @@ function StoreSettingsSection() {
   const { settings, updateSettings, updateHeroSlide, addHeroSlide, removeHeroSlide } = useApp();
   const [info, setInfo] = useState({ ...settings });
   const [saved, setSaved] = useState(false);
+  const [uploadingQr, setUploadingQr] = useState(false);
   const [newSlide, setNewSlide] = useState({ title: '', subtitle: '', description: '', image: '' });
   const [addingSlide, setAddingSlide] = useState(false);
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
@@ -1429,6 +1428,9 @@ function StoreSettingsSection() {
       weekendHours: info.weekendHours,
       announcement: info.announcement,
       deliveryFee: Number(info.deliveryFee) || 49,
+      gcashNumber: info.gcashNumber,
+      gcashName: info.gcashName,
+      gcashQrCode: info.gcashQrCode,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -1550,6 +1552,8 @@ function StoreSettingsSection() {
             { label: 'Weekday Hours', key: 'weekdayHours', placeholder: '6am - 10pm' },
             { label: 'Weekend Hours', key: 'weekendHours', placeholder: '7am - 11pm' },
             { label: 'Delivery Fee (₱)', key: 'deliveryFee', placeholder: '49' },
+            { label: 'GCash Number', key: 'gcashNumber', placeholder: '+63 917 123 4567' },
+            { label: 'GCash Account Name', key: 'gcashName', placeholder: 'Fabella Coffee' },
           ].map(({ label, key, placeholder }) => (
             <div key={key}>
               <label className="text-xs text-gray-400 mb-1.5 block">{label}</label>
@@ -1575,6 +1579,64 @@ function StoreSettingsSection() {
               onChange={(e) => setInfo({ ...info, announcement: e.target.value })}
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black transition-colors"
             />
+          </div>
+
+          {/* GCash QR Code Image Uploader */}
+          <div className="sm:col-span-2 border-t border-gray-150 pt-5 mt-2 space-y-3">
+            <label className="text-sm font-medium text-gray-800 block">GCash Payment QR Code</label>
+            <div className="flex items-center gap-5">
+              {info.gcashQrCode ? (
+                <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-inner flex-shrink-0">
+                  <img src={info.gcashQrCode} alt="GCash QR Code" className="w-full h-full object-contain" />
+                </div>
+              ) : (
+                <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
+                  No QR Code
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingQr(true);
+                    try {
+                      const url = await uploadProductImage(file);
+                      setInfo((prev) => ({ ...prev, gcashQrCode: url }));
+                      alert('GCash QR Code uploaded successfully!');
+                    } catch (err) {
+                      console.error('GCash QR Code upload failed:', err);
+                      alert('Failed to upload GCash QR Code.');
+                    } finally {
+                      setUploadingQr(false);
+                    }
+                  }}
+                  className="hidden"
+                  id="gcash-qr-upload"
+                  disabled={uploadingQr}
+                />
+                <div className="flex gap-2">
+                  <label
+                    htmlFor="gcash-qr-upload"
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 hover:border-black rounded-full text-xs font-medium transition-all"
+                  >
+                    {uploadingQr ? 'Uploading...' : 'Upload QR Image'}
+                  </label>
+                  {info.gcashQrCode && (
+                    <button
+                      type="button"
+                      onClick={() => setInfo((prev) => ({ ...prev, gcashQrCode: '' }))}
+                      className="px-4 py-2 border border-red-200 hover:border-red-500 text-red-500 hover:bg-red-50 rounded-full text-xs font-medium transition-all"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400">Supported formats: JPG, PNG, WebP. Max 5MB.</p>
+              </div>
+            </div>
           </div>
         </div>
 

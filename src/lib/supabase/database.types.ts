@@ -78,6 +78,9 @@ export interface StoreSettings {
   announcement: string | null;
   hero_slides: HeroSlide[];
   delivery_fee: number;
+  gcash_number: string;
+  gcash_name: string;
+  gcash_qr_code: string | null;
   updated_at: string;
 }
 

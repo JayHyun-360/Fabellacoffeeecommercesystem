@@ -308,12 +308,13 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
   );
 }
 
-function PaymentStep({ details, items, onChange, onNext, onBack }: {
+function PaymentStep({ details, items, onChange, onNext, onBack, placingOrder }: {
   details: OrderDetails;
   items: CartItem[];
   onChange: (field: keyof OrderDetails, value: string) => void;
   onNext: () => void;
   onBack: () => void;
+  placingOrder: boolean;
 }) {
   const { settings } = useApp();
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -369,14 +370,56 @@ function PaymentStep({ details, items, onChange, onNext, onBack }: {
         ))}
 
         {details.paymentMethod === 'gcash' && (
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
-            <p className="text-sm text-blue-800">After placing your order, send payment to:</p>
-            <p className="text-blue-900 mt-1">GCash: <span>+63 917 123 4567</span></p>
-            <p className="text-sm text-blue-600 mt-1">Name: Fabella Coffee</p>
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 space-y-4">
+            <div>
+              <p className="text-sm text-blue-800 font-medium">After placing your order, send payment to:</p>
+              <div className="mt-2 flex items-center justify-between bg-white border border-blue-100 p-3 rounded-xl shadow-sm">
+                <div>
+                  <p className="text-xs text-gray-400">GCash Account Name</p>
+                  <p className="text-sm font-semibold text-blue-950">{settings.gcashName || 'Fabella Coffee'}</p>
+                </div>
+              </div>
+              <div className="mt-2 flex items-center justify-between bg-white border border-blue-100 p-3 rounded-xl shadow-sm">
+                <div>
+                  <p className="text-xs text-gray-400">GCash Number</p>
+                  <p className="text-sm font-semibold text-blue-950">{settings.gcashNumber || '+63 917 123 4567'}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(settings.gcashNumber || '+63 917 123 4567');
+                    alert('GCash number copied!');
+                  }}
+                  className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg transition-all"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            {settings.gcashQrCode && (
+              <div className="flex flex-col items-center justify-center p-3 bg-white border border-blue-100 rounded-xl shadow-sm">
+                <p className="text-xs text-gray-400 mb-2">Scan QR Code to Pay</p>
+                <div className="w-48 h-48 rounded-lg overflow-hidden border border-gray-150">
+                  <img
+                    src={settings.gcashQrCode}
+                    alt="GCash QR Code"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <a
+                  href={settings.gcashQrCode}
+                  download="gcash_qr_code.png"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2.5 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                >
+                  View / Open QR Code
+                </a>
+              </div>
+            )}
           </div>
         )}
-
-
 
         <div className="mt-4 bg-gray-50 rounded-2xl p-4 space-y-2">
           <div className="flex justify-between text-sm text-gray-600">
@@ -408,10 +451,20 @@ function PaymentStep({ details, items, onChange, onNext, onBack }: {
         </button>
         <button
           onClick={onNext}
-          className="flex-1 py-3 bg-black text-white hover:bg-black/80 transition-all rounded-full flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+          disabled={placingOrder}
+          className="flex-1 py-3 bg-black text-white hover:bg-black/80 disabled:opacity-50 transition-all rounded-full flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
         >
-          Place Order
-          <ChevronRight className="w-4 h-4" />
+          {placingOrder ? (
+            <>
+              <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+              Placing Order...
+            </>
+          ) : (
+            <>
+              Place Order
+              <ChevronRight className="w-4 h-4" />
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -509,14 +562,12 @@ function OrderConfirmation({ details, items, orderNumber, onClose }: {
   );
 }
 
-function generateOrderNumber() {
-  return `FC-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 900 + 100)}`;
-}
-
 export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutProps) {
   const { user, loginWithGoogle, loginAnonymously, isAnonymous } = useAuth();
+  const { settings, addOrder } = useApp();
   const [step, setStep] = useState(0);
   const [signingIn, setSigningIn] = useState(false);
+  const [placingOrder, setPlacingOrder] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [details, setDetails] = useState<OrderDetails>({
     name: '',
@@ -544,15 +595,9 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
     setDetails((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handlePlaceOrder = () => {
-    const num = generateOrderNumber();
-    setOrderNumber(num);
-    setStep(3);
-  };
-
-  const { settings } = useApp();
-  const handleClose = () => {
-    if (step === 3) {
+  const handlePlaceOrder = async () => {
+    setPlacingOrder(true);
+    try {
       const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
       const deliveryFee = details.deliveryType === 'delivery' ? (settings.deliveryFee ?? 49) : 0;
       const now = new Date();
@@ -560,8 +605,9 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
         month: 'short', day: 'numeric', year: 'numeric',
         hour: '2-digit', minute: '2-digit',
       });
-      onOrderComplete({
-        orderNumber,
+
+      const orderPayload: SavedOrder = {
+        orderNumber: '', // Will be set by addOrder
         date: dateStr,
         items: items.map((i) => ({
           id: i.id,
@@ -576,11 +622,26 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
         deliveryType: details.deliveryType,
         paymentMethod: details.paymentMethod,
         name: details.name,
+        phone: details.phone,
+        email: details.email,
         address: details.address,
         city: details.city,
         status: 'pending',
-      });
+      };
+
+      const savedOrder = await addOrder(orderPayload);
+      setOrderNumber(savedOrder.orderNumber);
+      setStep(3); // Go to confirmation page
+      onOrderComplete(savedOrder); // Empty cart
+    } catch (err) {
+      console.error('Checkout failed:', err);
+      alert('Failed to place order. Please try again.');
+    } finally {
+      setPlacingOrder(false);
     }
+  };
+
+  const handleClose = () => {
     onClose();
     setStep(0);
     setDetails({
@@ -701,6 +762,7 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
               onChange={handleChange}
               onNext={handlePlaceOrder}
               onBack={() => setStep(1)}
+              placingOrder={placingOrder}
             />
           )}
           {step === 3 && (
