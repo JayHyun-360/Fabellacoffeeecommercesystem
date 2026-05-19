@@ -95,7 +95,7 @@ export function SearchModal({ isOpen, onClose, products, onAddToCart }: SearchMo
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search menu — coffee, pastries, food…"
-            className="flex-1 outline-none text-lg bg-transparent placeholder-gray-300"
+            className="flex-1 outline-none text-lg bg-transparent placeholder:text-gray-400"
           />
           <button
             onClick={onClose}

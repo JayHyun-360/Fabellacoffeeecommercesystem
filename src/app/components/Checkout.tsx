@@ -228,7 +228,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
               placeholder="Full Name *"
               value={details.name}
               onChange={(e) => onChange('name', e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black transition-colors"
+              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors"
             />
           </div>
 
@@ -239,7 +239,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
               placeholder={needsPhone ? "Phone Number *" : "Phone Number (Optional)"}
               value={details.phone}
               onChange={(e) => onChange('phone', e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black transition-colors"
+              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors"
             />
           </div>
 
@@ -250,7 +250,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
               placeholder={needsEmail ? "Email Address *" : "Email Address (Optional)"}
               value={details.email}
               onChange={(e) => onChange('email', e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black transition-colors"
+              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors"
             />
           </div>
 
@@ -263,7 +263,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
                   value={details.address}
                   onChange={(e) => onChange('address', e.target.value)}
                   rows={2}
-                  className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black transition-colors resize-none"
+                  className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors resize-none"
                 />
               </div>
 
@@ -272,7 +272,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
                 placeholder="City / Municipality"
                 value={details.city}
                 onChange={(e) => onChange('city', e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black transition-colors"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors"
               />
             </>
           )}
@@ -282,7 +282,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
             value={details.notes}
             onChange={(e) => onChange('notes', e.target.value)}
             rows={2}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black transition-colors resize-none"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors resize-none"
           />
         </div>
       </div>
