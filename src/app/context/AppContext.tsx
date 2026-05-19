@@ -137,40 +137,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioContext();
+      const now = ctx.currentTime;
       
-      const playTone = (freq: number, startTime: number, duration: number) => {
-        const now = ctx.currentTime + startTime;
-        // Bell overtones at non-harmonic ratios to emulate a mechanical chime
-        const frequencies = [freq, freq * 1.2, freq * 1.5, freq * 2.0, freq * 2.5, freq * 2.61];
-        const gains = [0.2, 0.1, 0.06, 0.04, 0.02, 0.01];
-        const decays = [duration, duration * 0.8, duration * 0.6, duration * 0.4, duration * 0.3, duration * 0.2];
-
-        frequencies.forEach((f, idx) => {
-          const osc = ctx.createOscillator();
-          const gainNode = ctx.createGain();
-          
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(f, now);
-          
-          // Attack
-          gainNode.gain.setValueAtTime(0, now);
-          gainNode.gain.linearRampToValueAtTime(gains[idx], now + 0.01);
-          // Exponential decay
-          gainNode.gain.exponentialRampToValueAtTime(0.001, now + decays[idx]);
-          
-          osc.connect(gainNode);
-          gainNode.connect(ctx.destination);
-          
-          osc.start(now);
-          osc.stop(now + decays[idx] + 0.15);
-        });
+      const playSoftTone = (freq: number, startTime: number, maxGain: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + startTime);
+        
+        // Soft Attack - slow ramp-up for a gentler, softer hit
+        gainNode.gain.setValueAtTime(0, now + startTime);
+        gainNode.gain.linearRampToValueAtTime(maxGain, now + startTime + 0.06);
+        // Long, smooth exponential decay
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + startTime + duration);
+        
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        osc.start(now + startTime);
+        osc.stop(now + startTime + duration + 0.1);
       };
 
-      // Play 4 rings (Ding-Dong, Ding-Dong) spaced out over 5 seconds
-      playTone(880, 0.0, 1.8); // Ding 1
-      playTone(700, 0.8, 1.8); // Dong 1
-      playTone(880, 2.0, 1.8); // Ding 2
-      playTone(700, 2.8, 1.8); // Dong 2
+      // Gentle, high-pitched E-major arpeggio arpeggiating upward
+      playSoftTone(1318.51, 0.0, 0.07, 2.5); // E6
+      playSoftTone(1661.22, 0.2, 0.05, 2.3); // G#6
+      playSoftTone(1975.53, 0.4, 0.04, 2.1); // B6
+      playSoftTone(2637.02, 0.6, 0.03, 2.5); // E7
     } catch (e) {
       console.warn("Audio autoplay blocked by browser policy");
     }

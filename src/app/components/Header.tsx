@@ -58,9 +58,9 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick, 
             <History className="w-5 h-5" />
           </button>
 
-          {/* Cart — Hidden on mobile, hidden for admin preview */}
+          {/* Cart — Visible directly on mobile/desktop, hidden for admin preview */}
           {onCartClick && (
-            <button onClick={onCartClick} className="hidden md:block relative hover:opacity-60 transition-opacity">
+            <button onClick={onCartClick} className="relative hover:opacity-60 transition-opacity mr-2 md:mr-0">
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-black text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
@@ -70,8 +70,8 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick, 
             </button>
           )}
 
-          {/* Auth / Access Switcher */}
-          <div className="relative">
+          {/* Auth / Access Switcher — Hidden on mobile header */}
+          <div className="relative hidden md:block">
             <button
               onClick={() => setAccessOpen(!accessOpen)}
               title={user ? (user.user_metadata?.full_name ?? user.email ?? 'Account') : 'Sign In'}
@@ -104,6 +104,16 @@ export function Header({ cartCount, onCartClick, onHistoryClick, onSearchClick, 
           <a href="#beverages" onClick={() => setMobileMenuOpen(false)} className="hover:opacity-60 transition-opacity py-2">Beverages</a>
 
           <div className="border-t border-gray-200 pt-4 mt-2 space-y-1">
+            <button onClick={() => { setAccessOpen(true); setMobileMenuOpen(false); }}
+              className="w-full flex items-center gap-3 hover:opacity-60 transition-opacity py-2 text-black">
+              {user?.user_metadata?.avatar_url ? (
+                <img src={user.user_metadata.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover" />
+              ) : (
+                <User className="w-5 h-5 text-gray-500" />
+              )}
+              <span>{user ? (user.user_metadata?.full_name ?? 'My Account') : 'Sign In / Account'}</span>
+            </button>
+
             <button onClick={() => { onFAQClick(); setMobileMenuOpen(false); }}
               className="w-full flex items-center gap-3 hover:opacity-60 transition-opacity py-2 text-black font-semibold">
               <HelpCircle className="w-5 h-5 text-gray-500" /><span>FAQ & Policies</span>
