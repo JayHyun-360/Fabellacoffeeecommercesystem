@@ -418,13 +418,9 @@ export function StaffPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-sm p-0.5 border border-white/20 shadow-lg">
-                <div className="w-full h-full rounded-2xl bg-white/95 flex items-center justify-center p-1">
-                  <img src={typeof logoImg === 'string' ? logoImg : logoImg.src} alt="Fabella Coffee" className="w-full h-full object-contain" />
-                </div>
-              </div>
+              <img src={typeof logoImg === 'string' ? logoImg : logoImg.src} alt="Fabella Coffee" className="w-11 h-11 object-contain" />
               <div>
-                <p className="text-white text-sm tracking-widest">FABELLA COFFEE</p>
+                <p className="text-white text-sm tracking-widest font-semibold">FABELLA COFFEE</p>
                 <p className="text-gray-400 text-xs flex items-center gap-1">
                   <Coffee className="w-3 h-3" />{isAdmin ? 'Staff Preview' : 'Staff Portal'}
                 </p>

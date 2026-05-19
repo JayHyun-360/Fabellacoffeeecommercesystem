@@ -1789,13 +1789,9 @@ export function AdminPage() {
         {/* Logo */}
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-900 to-black p-0.5 shadow-lg">
-              <div className="w-full h-full rounded-2xl bg-white p-1 flex items-center justify-center">
-                <img src={typeof logoImg === 'string' ? logoImg : logoImg.src} alt="Fabella Coffee" className="w-full h-full object-contain" />
-              </div>
-            </div>
+            <img src={typeof logoImg === 'string' ? logoImg : logoImg.src} alt="Fabella Coffee" className="w-12 h-12 object-contain" />
             <div>
-              <p className="text-sm tracking-tight">FABELLA COFFEE</p>
+              <p className="text-sm tracking-tight font-semibold text-gray-950">FABELLA COFFEE</p>
               <p className="text-xs text-gray-400">Admin Panel</p>
             </div>
           </div>
