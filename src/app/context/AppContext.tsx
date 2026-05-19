@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import type { SavedOrder } from '../components/OrderHistory';
 import { isSupabaseConfigured } from '../../lib/supabase/client';
@@ -135,12 +135,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const chimeBase64 = "data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"; 
   // (Note: The above is a tiny silent stub to prevent crash if not perfectly generated, we will use a browser AudioContext oscillator for a perfect guaranteed chime instead to keep the file size pristine).
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Preload the custom sound as soon as the settings are fetched or updated
+  useEffect(() => {
+    if (settings.notificationSoundUrl) {
+      console.log("Preloading custom notification sound:", settings.notificationSoundUrl);
+      const audio = new Audio(settings.notificationSoundUrl);
+      audio.preload = 'auto';
+      audio.load();
+      audioRef.current = audio;
+    } else {
+      audioRef.current = null;
+    }
+  }, [settings.notificationSoundUrl]);
+
   const playChime = useCallback(() => {
     try {
-      if (settings.notificationSoundUrl) {
-        const audio = new Audio(settings.notificationSoundUrl);
-        audio.play().catch((audioErr) => {
-          console.warn("Failed to play custom MP3 notification sound, falling back to synthesized chime:", audioErr);
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch((audioErr) => {
+          console.warn("Failed to play preloaded custom MP3 notification sound, falling back to synthesized chime:", audioErr);
           playSynthesizedChime();
         });
         return;
@@ -192,7 +207,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.warn("Failed to play synthesized chime:", err);
       }
     }
-  }, [settings.notificationSoundUrl]);
+  }, []);
 
   const clearUnreadOrders = useCallback(() => setUnreadOrderCount(0), []);
   const clearLatestNotification = useCallback(() => setLatestNotification(null), []);
