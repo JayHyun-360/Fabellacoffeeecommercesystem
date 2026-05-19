@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { Hero } from '../components/Hero';
 import { MenuSection } from '../components/MenuSection';
@@ -24,6 +24,30 @@ export function CustomerPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('fabella_cart');
+      if (stored) {
+        setCartItems(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error('Failed to load cart from localStorage:', e);
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // Save cart to localStorage when cartItems changes
+  useEffect(() => {
+    if (!isInitialized) return;
+    try {
+      localStorage.setItem('fabella_cart', JSON.stringify(cartItems));
+    } catch (e) {
+      console.error('Failed to save cart to localStorage:', e);
+    }
+  }, [cartItems, isInitialized]);
 
   // Only show available products to customers
   const availableProducts = products.filter((p) => p.available);
