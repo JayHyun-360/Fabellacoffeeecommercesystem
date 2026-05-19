@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, ChevronRight, ChevronLeft, MapPin, Phone, Mail, User, Check, Package, Truck, CreditCard, Smartphone, Banknote, Store, UtensilsCrossed, ShoppingBag, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -168,9 +168,14 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
   isAnonymous: boolean;
 }) {
   const needsAddress = details.deliveryType === 'delivery';
-  const isValid = isAnonymous
-    ? (details.name.trim() && (!needsAddress || details.address.trim()))
-    : (details.name.trim() && details.phone.trim() && details.email.trim() && (!needsAddress || details.address.trim()));
+  const needsPhone = details.deliveryType === 'delivery' && !isAnonymous;
+  const needsEmail = !isAnonymous;
+
+  const isValid =
+    details.name.trim() &&
+    (!needsPhone || details.phone.trim()) &&
+    (!needsEmail || details.email.trim()) &&
+    (!needsAddress || details.address.trim());
 
   return (
     <div className="flex flex-col h-full">
@@ -231,7 +236,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="tel"
-              placeholder={isAnonymous ? "Phone Number (Optional)" : "Phone Number *"}
+              placeholder={needsPhone ? "Phone Number *" : "Phone Number (Optional)"}
               value={details.phone}
               onChange={(e) => onChange('phone', e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black transition-colors"
@@ -242,7 +247,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="email"
-              placeholder={isAnonymous ? "Email Address (Optional)" : "Email Address *"}
+              placeholder={needsEmail ? "Email Address *" : "Email Address (Optional)"}
               value={details.email}
               onChange={(e) => onChange('email', e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black transition-colors"
@@ -551,6 +556,17 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
     deliveryType: 'delivery',
     paymentMethod: 'cod',
   });
+
+  // Pre-fill user details from Google account on opening
+  useEffect(() => {
+    if (isOpen && user) {
+      setDetails((prev) => ({
+        ...prev,
+        name: prev.name || user.user_metadata?.full_name || '',
+        email: prev.email || user.email || '',
+      }));
+    }
+  }, [isOpen, user]);
 
   const handleChange = (field: keyof OrderDetails, value: string) => {
     setDetails((prev) => ({ ...prev, [field]: value }));
