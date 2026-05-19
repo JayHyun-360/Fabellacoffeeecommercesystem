@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { useAuth } from './AuthContext';
 import type { SavedOrder } from '../components/OrderHistory';
 import { isSupabaseConfigured } from '../../lib/supabase/client';
 import {
@@ -120,6 +121,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType>(null!);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { role } = useAuth();
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [orders, setOrders] = useState<SavedOrder[]>([]);
   const [settings, setSettings] = useState<StoreSettings>(INITIAL_SETTINGS);
@@ -262,28 +264,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshSettings();
     refreshOrders();
 
-    if (isSupabaseConfigured) {
+    if (isSupabaseConfigured && (role === 'admin' || role === 'staff')) {
       const supabase = createClient();
       
-      // Listen for NEW orders via Supabase Realtime
+      // Listen for all order changes via Supabase Realtime to keep screens synced
       const channel = supabase.channel('realtime_orders')
         .on(
           'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'orders' },
+          { event: '*', schema: 'public', table: 'orders' },
           (payload) => {
-            const newOrder = payload.new;
-            
             // Refresh to grab full data (including joined items)
             refreshOrders();
             
-            // Trigger Notifications
-            playChime();
-            setUnreadOrderCount(prev => prev + 1);
-            setLatestNotification({
-              id: newOrder.id,
-              title: '🔔 New Order Received',
-              body: `Queue #Q-${newOrder.queue_number.toString().padStart(4, '0')} — ${newOrder.customer_name || 'Customer'}`
-            });
+            // Trigger Notifications ONLY on INSERT
+            if (payload.eventType === 'INSERT') {
+              const newOrder = payload.new;
+              playChime();
+              setUnreadOrderCount(prev => prev + 1);
+              setLatestNotification({
+                id: newOrder.id,
+                title: '🔔 New Order Received',
+                body: `Queue #Q-${newOrder.queue_number.toString().padStart(4, '0')} — ${newOrder.customer_name || 'Customer'}`
+              });
+            }
           }
         )
         .subscribe();
@@ -292,7 +295,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         supabase.removeChannel(channel);
       };
     }
-  }, [refreshProducts, refreshSettings, refreshOrders, playChime]);
+  }, [refreshProducts, refreshSettings, refreshOrders, playChime, role]);
 
   const addOrder = async (order: SavedOrder): Promise<SavedOrder> => {
     let finalOrder = order;

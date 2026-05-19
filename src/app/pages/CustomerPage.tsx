@@ -89,7 +89,6 @@ export function CustomerPage() {
   const handleOrderComplete = (order: SavedOrder) => {
     setCartItems([]);
     setCheckoutOpen(false);
-    addOrder(order);
   };
 
   return (
