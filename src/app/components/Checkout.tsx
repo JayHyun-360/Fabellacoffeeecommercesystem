@@ -505,12 +505,6 @@ function OrderConfirmation({ details, items, orderNumber, onClose }: {
           <p className="text-gray-500 text-sm">Thank you, {details.name.split(' ')[0]}!</p>
         </div>
 
-        {/* Queue Number */}
-        <div className="bg-gray-50 rounded-2xl p-5 mb-5 text-center">
-          <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Queue Number</p>
-          <p className="text-2xl tracking-widest">{orderNumber}</p>
-        </div>
-
         {/* Summary */}
         <div className="bg-gray-50 rounded-2xl p-5 mb-5 space-y-3">
           <div className="flex justify-between text-sm">

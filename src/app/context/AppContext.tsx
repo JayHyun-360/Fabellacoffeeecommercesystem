@@ -137,33 +137,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioContext();
-      const now = ctx.currentTime;
       
-      // Synthesize a rich metallic bell chime with overtones: fundamental 880Hz (A5)
-      // and overtones at non-harmonic ratios to emulate a premium mechanical chime vibration
-      const frequencies = [880, 1056, 1320, 1760, 2200, 2296];
-      const gains = [0.25, 0.12, 0.08, 0.05, 0.03, 0.02];
-      const decays = [1.8, 1.4, 1.0, 0.7, 0.5, 0.4];
+      const playTone = (freq: number, startTime: number, duration: number) => {
+        const now = ctx.currentTime + startTime;
+        // Bell overtones at non-harmonic ratios to emulate a mechanical chime
+        const frequencies = [freq, freq * 1.2, freq * 1.5, freq * 2.0, freq * 2.5, freq * 2.61];
+        const gains = [0.2, 0.1, 0.06, 0.04, 0.02, 0.01];
+        const decays = [duration, duration * 0.8, duration * 0.6, duration * 0.4, duration * 0.3, duration * 0.2];
 
-      frequencies.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now);
-        
-        // Attack
-        gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(gains[idx], now + 0.008);
-        // Exponential decay
-        gainNode.gain.exponentialRampToValueAtTime(0.001, now + decays[idx]);
-        
-        osc.connect(gainNode);
-        gainNode.connect(ctx.destination);
-        
-        osc.start(now);
-        osc.stop(now + decays[idx] + 0.1);
-      });
+        frequencies.forEach((f, idx) => {
+          const osc = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+          
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now);
+          
+          // Attack
+          gainNode.gain.setValueAtTime(0, now);
+          gainNode.gain.linearRampToValueAtTime(gains[idx], now + 0.01);
+          // Exponential decay
+          gainNode.gain.exponentialRampToValueAtTime(0.001, now + decays[idx]);
+          
+          osc.connect(gainNode);
+          gainNode.connect(ctx.destination);
+          
+          osc.start(now);
+          osc.stop(now + decays[idx] + 0.15);
+        });
+      };
+
+      // Play 4 rings (Ding-Dong, Ding-Dong) spaced out over 5 seconds
+      playTone(880, 0.0, 1.8); // Ding 1
+      playTone(700, 0.8, 1.8); // Dong 1
+      playTone(880, 2.0, 1.8); // Ding 2
+      playTone(700, 2.8, 1.8); // Dong 2
     } catch (e) {
       console.warn("Audio autoplay blocked by browser policy");
     }
