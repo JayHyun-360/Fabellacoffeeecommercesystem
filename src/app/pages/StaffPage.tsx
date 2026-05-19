@@ -320,6 +320,7 @@ export function StaffPage() {
   const [section, setSection] = useState<StaffSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -404,8 +405,55 @@ export function StaffPage() {
         </div>
 
         {/* Filter Navigation Tabs and Legends */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-100 pb-6">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 border-b border-gray-100 pb-6 relative z-10">
+          
+          {/* Mobile Filter Dropdown */}
+          <div className="md:hidden relative">
+            <button 
+              onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
+              className="w-full flex items-center justify-between bg-white border border-gray-200 px-5 py-3.5 rounded-2xl text-sm font-semibold text-gray-800 shadow-sm"
+            >
+              <div className="flex items-center gap-2">
+                <span>Filter Queue:</span>
+                <span className="text-black">{tabs.find(t => t.key === statusFilter)?.label}</span>
+                {tabs.find(t => t.key === statusFilter)?.count !== undefined && (
+                  <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200">
+                    {tabs.find(t => t.key === statusFilter)?.count}
+                  </span>
+                )}
+              </div>
+              <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${filterDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {filterDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => { setStatusFilter(tab.key); setFilterDropdownOpen(false); }}
+                    className={`w-full flex items-center justify-between px-5 py-4 text-sm font-semibold transition-colors border-b border-gray-50 last:border-b-0 ${
+                      statusFilter === tab.key ? 'bg-gray-50/80 text-black' : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {statusFilter === tab.key && <Check className="w-4 h-4 text-blue-500" />}
+                      <span className={statusFilter === tab.key ? 'ml-0' : 'ml-6'}>{tab.label}</span>
+                    </div>
+                    {tab.count !== undefined && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        statusFilter === tab.key ? 'bg-white border border-gray-200 text-gray-800 shadow-sm' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Filter Tabs */}
+          <div className="hidden md:flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
