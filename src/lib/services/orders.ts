@@ -73,21 +73,26 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     0
   );
 
+  const insertData: any = {
+    customer_name: payload.customer_name,
+    customer_id: payload.customer_id || null,
+    customer_email: payload.customer_email || null,
+    customer_phone: payload.customer_phone || null,
+    order_type: payload.order_type,
+    payment_method: payload.payment_method,
+    delivery_address: payload.delivery_address || null,
+    notes: payload.notes || null,
+    total,
+    status: 'pending',
+  };
+
+  if (payload.queue_number !== undefined) {
+    insertData.queue_number = payload.queue_number;
+  }
+
   const { data, error: orderError } = await supabase
     .from('orders')
-    .insert({
-      customer_name: payload.customer_name,
-      customer_id: payload.customer_id || null,
-      customer_email: payload.customer_email || null,
-      customer_phone: payload.customer_phone || null,
-      order_type: payload.order_type,
-      payment_method: payload.payment_method,
-      queue_number: payload.queue_number,
-      delivery_address: payload.delivery_address || null,
-      notes: payload.notes || null,
-      total,
-      status: 'pending',
-    } as any)
+    .insert(insertData)
     .select()
     .single();
 

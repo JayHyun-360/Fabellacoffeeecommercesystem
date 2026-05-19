@@ -136,36 +136,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const playChime = useCallback(() => {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
       const ctx = new AudioContext();
+      
+      // Resume context if suspended (browser security requirement)
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
       const now = ctx.currentTime;
       
-      const playSoftTone = (freq: number, startTime: number, maxGain: number, duration: number) => {
+      const playBellTone = (freq: number, startTime: number, maxGain: number, duration: number) => {
         const osc = ctx.createOscillator();
         const gainNode = ctx.createGain();
         
+        // Sine wave for pure, soft bell tones
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, now + startTime);
         
-        // Soft Attack - slow ramp-up for a gentler, softer hit
+        // Soft Attack - gentle linear ramp up to avoid clicks or hard hits
         gainNode.gain.setValueAtTime(0, now + startTime);
-        gainNode.gain.linearRampToValueAtTime(maxGain, now + startTime + 0.06);
-        // Long, smooth exponential decay
+        gainNode.gain.linearRampToValueAtTime(maxGain, now + startTime + 0.03);
+        // Smooth exponential decay
         gainNode.gain.exponentialRampToValueAtTime(0.0001, now + startTime + duration);
         
         osc.connect(gainNode);
         gainNode.connect(ctx.destination);
         
         osc.start(now + startTime);
-        osc.stop(now + startTime + duration + 0.1);
+        osc.stop(now + startTime + duration + 0.15);
       };
 
-      // Gentle, high-pitched E-major arpeggio arpeggiating upward
-      playSoftTone(1318.51, 0.0, 0.07, 2.5); // E6
-      playSoftTone(1661.22, 0.2, 0.05, 2.3); // G#6
-      playSoftTone(1975.53, 0.4, 0.04, 2.1); // B6
-      playSoftTone(2637.02, 0.6, 0.03, 2.5); // E7
+      // Sparkling high-pitched crystal bells (G-major triad chord)
+      playBellTone(1567.98, 0.0, 0.07, 1.5); // G6 crystal bell
+      playBellTone(1975.53, 0.15, 0.05, 1.2); // B6 crystal bell
+      playBellTone(2349.32, 0.3, 0.04, 1.8); // D7 crystal bell
     } catch (e) {
-      console.warn("Audio autoplay blocked by browser policy");
+      console.warn("Audio autoplay blocked or unsupported by browser policy", e);
     }
   }, []);
 
@@ -241,7 +248,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const items = order.order_items || [];
           return {
             id: order.id,
-            orderNumber: `Q-${order.queue_number.toString().padStart(4, '0')}`,
+            orderNumber: order.queue_number ? `Q-${order.queue_number.toString().padStart(4, '0')}` : 'Q-0000',
             date: new Date(order.created_at).toLocaleDateString(),
             items: items.map((i: any) => ({
               id: i.product_id || '',
@@ -295,7 +302,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               setLatestNotification({
                 id: newOrder.id,
                 title: '🔔 New Order Received',
-                body: `Queue #Q-${newOrder.queue_number.toString().padStart(4, '0')} — ${newOrder.customer_name || 'Customer'}`
+                body: `Queue #Q-${newOrder.queue_number ? newOrder.queue_number.toString().padStart(4, '0') : '0000'} — ${newOrder.customer_name || 'Customer'}`
               });
             }
           }
@@ -341,7 +348,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           finalOrder = {
             ...order,
             id: created.id,
-            orderNumber: `Q-${created.queue_number.toString().padStart(4, '0')}`,
+            orderNumber: created.queue_number ? `Q-${created.queue_number.toString().padStart(4, '0')}` : 'Q-0000',
           };
         }
       } catch (err) {
