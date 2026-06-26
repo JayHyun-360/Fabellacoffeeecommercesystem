@@ -44,7 +44,13 @@ import type { SavedOrder } from "../components/OrderHistory";
 import logoImg from "../../imports/682349994_793900143580024_743914547050463231_n.png";
 
 type StaffSection = "dashboard" | "manual" | "privacy";
-type StatusFilter = "all" | "pending" | "ongoing" | "received" | "cancelled";
+type StatusFilter =
+  | "all"
+  | "pending"
+  | "preparing"
+  | "ready"
+  | "completed"
+  | "cancelled";
 
 const ORDER_TYPE_CONFIG: Record<
   SavedOrder["deliveryType"],
@@ -97,26 +103,33 @@ const STATUS_CONFIG: Record<
     ring: "ring-amber-200/60",
     text: "text-amber-700",
   },
+  preparing: {
+    label: "Preparing",
+    dot: "bg-blue-400",
+    badge: "bg-blue-50/50 text-blue-700 border-blue-200",
+    ring: "ring-blue-200/60",
+    text: "text-blue-700",
+  },
+  ready: {
+    label: "Ready",
+    dot: "bg-purple-400",
+    badge: "bg-purple-50 text-purple-700 border-purple-200",
+    ring: "ring-purple-200/60",
+    text: "text-purple-700",
+  },
+  completed: {
+    label: "Completed",
+    dot: "bg-green-400",
+    badge: "bg-green-50 text-green-700 border-green-200",
+    ring: "ring-green-200/60",
+    text: "text-green-700",
+  },
   cancelled: {
     label: "Cancelled",
     dot: "bg-red-400",
     badge: "bg-red-50 text-red-700 border-red-200",
     ring: "ring-red-200/60",
     text: "text-red-700",
-  },
-  ongoing: {
-    label: "In Progress",
-    dot: "bg-blue-400",
-    badge: "bg-blue-50/50 text-blue-700 border-blue-200",
-    ring: "ring-blue-200/60",
-    text: "text-blue-700",
-  },
-  received: {
-    label: "Completed",
-    dot: "bg-green-400",
-    badge: "bg-green-50 text-green-700 border-green-200",
-    ring: "ring-green-200/60",
-    text: "text-green-700",
   },
 };
 
@@ -235,10 +248,10 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
   const payment = PAYMENT_INFO[order.paymentMethod] || PAYMENT_INFO["cod"];
 
   const handleAccept = () => {
-    if (order.id) updateOrderStatus(order.id, "ongoing");
+    if (order.id) updateOrderStatus(order.id, "preparing");
   };
   const handleComplete = () => {
-    if (order.id) updateOrderStatus(order.id, "received");
+    if (order.id) updateOrderStatus(order.id, "completed");
   };
   const handleCancel = () => {
     if (confirm("Cancel this order?") && order.id)
@@ -248,7 +261,11 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
     if (order.id)
       updateOrderStatus(
         order.id,
-        order.status === "pending" ? "ongoing" : "received",
+        order.status === "pending"
+          ? "preparing"
+          : order.status === "preparing"
+            ? "ready"
+            : "completed",
       );
     setShowGCashQR(false);
   };
@@ -256,7 +273,10 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
   const timeStr = order.date.includes(",")
     ? order.date.split(", ").slice(1).join(", ")
     : order.date;
-  const isActive = order.status === "pending" || order.status === "ongoing";
+  const isActive =
+    order.status === "pending" ||
+    order.status === "preparing" ||
+    order.status === "ready";
 
   return (
     <>
@@ -264,9 +284,11 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
         className={`bg-white rounded-3xl overflow-hidden transition-all duration-300 border border-gray-100 hover:shadow-xl hover:border-gray-200/80 group ${
           order.status === "pending"
             ? "ring-2 ring-amber-400/20 shadow-md shadow-amber-500/2"
-            : order.status === "ongoing"
+            : order.status === "preparing"
               ? "ring-2 ring-blue-500/20 shadow-md shadow-blue-500/2"
-              : "shadow-sm"
+              : order.status === "ready"
+                ? "ring-2 ring-purple-500/20 shadow-md shadow-purple-500/2"
+                : "shadow-sm"
         }`}
       >
         {/* Color Highlight Bar */}
@@ -274,11 +296,13 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
           className={`h-1.5 w-full transition-all ${
             order.status === "pending"
               ? "bg-gradient-to-r from-amber-400 to-orange-400"
-              : order.status === "ongoing"
+              : order.status === "preparing"
                 ? "bg-gradient-to-r from-blue-500 to-cyan-500"
-                : order.status === "received"
-                  ? "bg-gradient-to-r from-emerald-400 to-green-500"
-                  : "bg-gray-200"
+                : order.status === "ready"
+                  ? "bg-gradient-to-r from-purple-500 to-fuchsia-500"
+                  : order.status === "completed"
+                    ? "bg-gradient-to-r from-emerald-400 to-green-500"
+                    : "bg-gray-200"
           }`}
         />
 
@@ -488,7 +512,11 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
                 ) : (
                   <button
                     onClick={
-                      order.status === "pending" ? handleAccept : handleComplete
+                      order.status === "pending"
+                        ? handleAccept
+                        : order.status === "preparing"
+                          ? handleComplete
+                          : handleComplete
                     }
                     className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all text-xs font-bold"
                   >
@@ -496,19 +524,24 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
                       <>
                         <CheckCircle className="w-4 h-4 text-emerald-400" />
                         {order.deliveryType === "delivery"
-                          ? "Accept & Ship Delivery"
+                          ? "Accept & Start Delivery"
                           : order.deliveryType === "pickup"
                             ? "Accept Pick Up Order"
                             : order.deliveryType === "dine-in"
                               ? "Accept Dine-In Order"
                               : "Accept Takeout Order"}
                       </>
-                    ) : (
+                    ) : order.status === "preparing" ? (
                       <>
                         <CheckCircle className="w-4 h-4 text-emerald-400" />
                         {order.deliveryType === "delivery"
-                          ? "Mark Order Delivered"
-                          : "Complete Preparation"}
+                          ? "Mark Ready for Delivery"
+                          : "Mark Order Ready"}
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 text-emerald-400" />
+                        Mark Completed
                       </>
                     )}
                   </button>
@@ -608,9 +641,12 @@ export function StaffPage() {
     });
 
     const pendingCount = orders.filter((o) => o.status === "pending").length;
-    const ongoingCount = orders.filter((o) => o.status === "ongoing").length;
+    const preparingCount = orders.filter(
+      (o) => o.status === "preparing",
+    ).length;
+    const readyCount = orders.filter((o) => o.status === "ready").length;
     const completedToday = todayOrders.filter(
-      (o) => o.status === "received",
+      (o) => o.status === "completed",
     ).length;
     const todayRevenue = todayOrders
       .filter((o) => o.status !== "cancelled")
@@ -621,15 +657,22 @@ export function StaffPage() {
         ? orders
         : orders.filter((o) => o.status === statusFilter);
     const sorted = [...filtered].sort((a, b) => {
-      const priority = { pending: 0, ongoing: 1, received: 2, cancelled: 3 };
+      const priority = {
+        pending: 0,
+        preparing: 1,
+        ready: 2,
+        completed: 3,
+        cancelled: 4,
+      };
       return priority[a.status] - priority[b.status];
     });
 
     const tabs: { key: StatusFilter; label: string; count?: number }[] = [
       { key: "all", label: "All Orders", count: orders.length },
       { key: "pending", label: "Pending", count: pendingCount },
-      { key: "ongoing", label: "Ongoing", count: ongoingCount },
-      { key: "received", label: "Completed" },
+      { key: "preparing", label: "Preparing", count: preparingCount },
+      { key: "ready", label: "Ready", count: readyCount },
+      { key: "completed", label: "Completed" },
       { key: "cancelled", label: "Cancelled" },
     ];
 
@@ -672,12 +715,20 @@ export function StaffPage() {
               icon: <Clock className="w-5 h-5 text-amber-600" />,
             },
             {
-              label: "Active",
-              value: String(ongoingCount),
+              label: "Preparing",
+              value: String(preparingCount),
               gradient: "from-blue-500/5 to-blue-500/10",
               border: "border-blue-200/50",
               color: "text-blue-700",
               icon: <Coffee className="w-5 h-5 text-blue-600" />,
+            },
+            {
+              label: "Ready",
+              value: String(readyCount),
+              gradient: "from-purple-500/5 to-purple-500/10",
+              border: "border-purple-200/50",
+              color: "text-purple-700",
+              icon: <CheckCircle className="w-5 h-5 text-purple-600" />,
             },
             {
               label: "Done Today",

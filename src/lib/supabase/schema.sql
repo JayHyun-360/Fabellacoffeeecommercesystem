@@ -13,7 +13,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ─── Enums ────────────────────────────────────────────────────────────────────
 CREATE TYPE public.app_role        AS ENUM ('admin', 'staff', 'customer');
 CREATE TYPE public.product_category AS ENUM ('coffee', 'food', 'pastries', 'beverages');
-CREATE TYPE public.order_status    AS ENUM ('pending', 'ongoing', 'completed', 'cancelled');
+CREATE TYPE public.order_status    AS ENUM ('pending', 'preparing', 'ready', 'completed', 'cancelled');
 CREATE TYPE public.order_type      AS ENUM ('dine-in', 'takeout', 'delivery', 'pickup');
 CREATE TYPE public.payment_method  AS ENUM ('cod', 'gcash', 'card');
 
@@ -131,6 +131,7 @@ CREATE TABLE public.orders (
   status           public.order_status NOT NULL DEFAULT 'pending',
   total            NUMERIC(10, 2) NOT NULL CHECK (total >= 0),
   notes            TEXT,
+  notes_data       JSONB NOT NULL DEFAULT '{"customer": null, "staff": null, "delivery": null, "internal": null}'::jsonb,
   delivery_address TEXT,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()

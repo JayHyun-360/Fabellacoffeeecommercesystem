@@ -1,14 +1,14 @@
 // Service layer for order operations.
 // When Supabase is connected, these functions replace direct context mutations.
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from "@/lib/supabase/client";
 import type {
   Order,
   OrderItem,
   OrderStatus,
   OrderType,
   PaymentMethod,
-} from '@/lib/supabase/database.types';
+} from "@/lib/supabase/database.types";
 
 export type { Order, OrderItem, OrderStatus, OrderType, PaymentMethod };
 
@@ -20,6 +20,12 @@ export interface CreateOrderPayload {
   order_type: OrderType;
   payment_method: PaymentMethod;
   notes?: string;
+  notes_data?: {
+    customer?: string | null;
+    staff?: string | null;
+    delivery?: string | null;
+    internal?: string | null;
+  };
   delivery_address?: string;
   queue_number: number;
   items: Array<{
@@ -34,20 +40,22 @@ export interface CreateOrderPayload {
 
 export async function fetchOrders(): Promise<Order[]> {
   const { data, error } = await supabase
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
 
   if (error) throw error;
   return data ?? [];
 }
 
-export async function fetchOrdersByCustomer(customerId: string): Promise<Order[]> {
+export async function fetchOrdersByCustomer(
+  customerId: string,
+): Promise<Order[]> {
   const { data, error } = await supabase
-    .from('orders')
-    .select('*')
-    .eq('customer_id', customerId)
-    .order('created_at', { ascending: false });
+    .from("orders")
+    .select("*")
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: false });
 
   if (error) throw error;
   return data ?? [];
@@ -55,9 +63,9 @@ export async function fetchOrdersByCustomer(customerId: string): Promise<Order[]
 
 export async function fetchOrderItems(orderId: string): Promise<OrderItem[]> {
   const { data, error } = await supabase
-    .from('order_items')
-    .select('*')
-    .eq('order_id', orderId);
+    .from("order_items")
+    .select("*")
+    .eq("order_id", orderId);
 
   if (error) throw error;
   return data ?? [];
@@ -70,7 +78,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
 
   const total = items.reduce(
     (sum, item) => sum + item.product_price * item.quantity,
-    0
+    0,
   );
 
   const insertData: any = {
@@ -83,15 +91,19 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     delivery_address: payload.delivery_address || null,
     notes: payload.notes || null,
     total,
-    status: 'pending',
+    status: "pending",
   };
+
+  if (payload.notes_data) {
+    insertData.notes_data = payload.notes_data;
+  }
 
   if (payload.queue_number !== undefined) {
     insertData.queue_number = payload.queue_number;
   }
 
   const { data, error: orderError } = await supabase
-    .from('orders')
+    .from("orders")
     .insert(insertData)
     .select()
     .single();
@@ -108,7 +120,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   }));
 
   const { error: itemsError } = await supabase
-    .from('order_items')
+    .from("order_items")
     .insert(orderItems as any);
 
   if (itemsError) throw itemsError;
@@ -118,11 +130,11 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
 
 export async function updateOrderStatus(
   orderId: string,
-  status: OrderStatus
+  status: OrderStatus,
 ): Promise<void> {
-  const { error } = await (supabase.from('orders') as any)
+  const { error } = await (supabase.from("orders") as any)
     .update({ status })
-    .eq('id', orderId);
+    .eq("id", orderId);
 
   if (error) throw error;
 }
@@ -130,19 +142,21 @@ export async function updateOrderStatus(
 // ─── Real-time subscription helper ───────────────────────────────────────────
 
 export function subscribeToOrders(
-  onUpdate: (orders: Order[]) => void
+  onUpdate: (orders: Order[]) => void,
 ): () => void {
   const channel = supabase
-    .channel('orders-realtime')
+    .channel("orders-realtime")
     .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'orders' },
+      "postgres_changes",
+      { event: "*", schema: "public", table: "orders" },
       async () => {
         const orders = await fetchOrders();
         onUpdate(orders);
-      }
+      },
     )
     .subscribe();
 
-  return () => { supabase.removeChannel(channel); };
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }

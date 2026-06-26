@@ -1,65 +1,100 @@
-import { X, Package, Truck, Store, ChevronDown, ChevronUp, Clock, Receipt, XCircle, UtensilsCrossed, ShoppingBag } from 'lucide-react';
-import { useState } from 'react';
+import {
+  X,
+  Package,
+  Truck,
+  Store,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Receipt,
+  XCircle,
+  UtensilsCrossed,
+  ShoppingBag,
+} from "lucide-react";
+import { useState } from "react";
 
 export interface SavedOrder {
   id?: string;
   date: string;
-  items: { id: string; name: string; price: number; quantity: number; image?: string }[];
+  items: {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    image?: string;
+  }[];
   subtotal: number;
   deliveryFee: number;
   total: number;
-  deliveryType: 'delivery' | 'pickup' | 'dine-in' | 'takeout';
-  paymentMethod: 'cod' | 'gcash' | 'card';
+  deliveryType: "delivery" | "pickup" | "dine-in" | "takeout";
+  paymentMethod: "cod" | "gcash" | "card";
   name: string;
   phone?: string;
   email?: string;
   address?: string;
   city?: string;
   notes?: string;
-  status: 'pending' | 'cancelled' | 'ongoing' | 'received';
+  notesData?: {
+    customer?: string | null;
+    staff?: string | null;
+    delivery?: string | null;
+    internal?: string | null;
+  };
+  status: "pending" | "preparing" | "ready" | "completed" | "cancelled";
 }
 
 interface OrderHistoryProps {
   isOpen: boolean;
   onClose: () => void;
   orders: SavedOrder[];
-  onUpdateStatus: (id: string, newStatus: SavedOrder['status']) => void;
+  onUpdateStatus: (id: string, newStatus: SavedOrder["status"]) => void;
 }
 
-const STATUS_CONFIG: Record<SavedOrder['status'], { label: string; color: string; bg: string }> = {
-  pending:   { label: 'Pending',     color: 'text-amber-700', bg: 'bg-amber-50'  },
-  cancelled: { label: 'Cancelled',   color: 'text-red-700',   bg: 'bg-red-50'    },
-  ongoing:   { label: 'In Progress', color: 'text-blue-700',  bg: 'bg-blue-50'   },
-  received:  { label: 'Completed',   color: 'text-green-700', bg: 'bg-green-50'  },
+const STATUS_CONFIG: Record<
+  SavedOrder["status"],
+  { label: string; color: string; bg: string }
+> = {
+  pending: { label: "Pending", color: "text-amber-700", bg: "bg-amber-50" },
+  preparing: { label: "Preparing", color: "text-blue-700", bg: "bg-blue-50" },
+  ready: { label: "Ready", color: "text-purple-700", bg: "bg-purple-50" },
+  completed: { label: "Completed", color: "text-green-700", bg: "bg-green-50" },
+  cancelled: { label: "Cancelled", color: "text-red-700", bg: "bg-red-50" },
 };
 
 const PAYMENT_LABELS: Record<string, string> = {
-  cod:   'Cash',
-  gcash: 'GCash',
-  card:  'Credit / Debit Card',
+  cod: "Cash",
+  gcash: "GCash",
+  card: "Credit / Debit Card",
 };
 
-const ORDER_TYPE_ICONS: Record<SavedOrder['deliveryType'], React.ReactNode> = {
-  'delivery': <Truck className="w-5 h-5 text-gray-600" />,
-  'pickup':   <Store className="w-5 h-5 text-gray-600" />,
-  'dine-in':  <UtensilsCrossed className="w-5 h-5 text-gray-600" />,
-  'takeout':  <ShoppingBag className="w-5 h-5 text-gray-600" />,
+const ORDER_TYPE_ICONS: Record<SavedOrder["deliveryType"], React.ReactNode> = {
+  delivery: <Truck className="w-5 h-5 text-gray-600" />,
+  pickup: <Store className="w-5 h-5 text-gray-600" />,
+  "dine-in": <UtensilsCrossed className="w-5 h-5 text-gray-600" />,
+  takeout: <ShoppingBag className="w-5 h-5 text-gray-600" />,
 };
 
-const ORDER_TYPE_LABELS: Record<SavedOrder['deliveryType'], string> = {
-  'delivery': 'Delivery',
-  'pickup':   'Pick Up',
-  'dine-in':  'Dine In',
-  'takeout':  'Takeout',
+const ORDER_TYPE_LABELS: Record<SavedOrder["deliveryType"], string> = {
+  delivery: "Delivery",
+  pickup: "Pick Up",
+  "dine-in": "Dine In",
+  takeout: "Takeout",
 };
 
-function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatus: (id: string, newStatus: SavedOrder['status']) => void }) {
+function OrderCard({
+  order,
+  onUpdateStatus,
+}: {
+  order: SavedOrder;
+  onUpdateStatus: (id: string, newStatus: SavedOrder["status"]) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const status = STATUS_CONFIG[order.status];
+  const notesText = order.notesData?.customer || order.notes || "";
 
   const handleCancel = () => {
-    if (confirm('Are you sure you want to cancel this order?') && order.id) {
-      onUpdateStatus(order.id, 'cancelled');
+    if (confirm("Are you sure you want to cancel this order?") && order.id) {
+      onUpdateStatus(order.id, "cancelled");
     }
   };
 
@@ -76,18 +111,25 @@ function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatu
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <span className={`text-xs px-2 py-0.5 rounded-full ${status.bg} ${status.color}`}>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full ${status.bg} ${status.color}`}
+            >
               {status.label}
             </span>
           </div>
           <p className="text-xs text-gray-400 mt-0.5">{order.date}</p>
           <p className="text-sm mt-1">
-            {order.items.length} item{order.items.length !== 1 ? 's' : ''} · <span>₱{order.total}</span>
+            {order.items.length} item{order.items.length !== 1 ? "s" : ""} ·{" "}
+            <span>₱{order.total}</span>
           </p>
         </div>
 
         <div className="flex-shrink-0 text-gray-400 mt-1">
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {expanded ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
         </div>
       </div>
 
@@ -100,7 +142,11 @@ function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatu
               <div key={item.id} className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                   {item.image ? (
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <Package className="w-4 h-4 text-gray-400" />
@@ -124,7 +170,9 @@ function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatu
             </div>
             <div className="flex justify-between text-sm text-gray-500">
               <span>Delivery</span>
-              <span>{order.deliveryFee === 0 ? 'Free' : `₱${order.deliveryFee}`}</span>
+              <span>
+                {order.deliveryFee === 0 ? "Free" : `₱${order.deliveryFee}`}
+              </span>
             </div>
             <div className="flex justify-between text-sm pt-1 border-t border-gray-100">
               <span>Total</span>
@@ -132,25 +180,37 @@ function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatu
             </div>
           </div>
 
+          {notesText && (
+            <div className="bg-white rounded-xl p-3">
+              <p className="text-gray-400 mb-0.5">Customer Notes</p>
+              <p className="text-gray-700">{notesText}</p>
+            </div>
+          )}
+
           {/* Meta */}
           <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
             <div className="bg-white rounded-xl p-3">
               <p className="text-gray-400 mb-0.5">Payment</p>
-              <p className="text-gray-700">{PAYMENT_LABELS[order.paymentMethod]}</p>
+              <p className="text-gray-700">
+                {PAYMENT_LABELS[order.paymentMethod]}
+              </p>
             </div>
             <div className="bg-white rounded-xl p-3">
               <p className="text-gray-400 mb-0.5">Order Type</p>
-              <p className="text-gray-700">{ORDER_TYPE_LABELS[order.deliveryType]}</p>
+              <p className="text-gray-700">
+                {ORDER_TYPE_LABELS[order.deliveryType]}
+              </p>
             </div>
-            {order.deliveryType === 'delivery' && order.address && (
+            {order.deliveryType === "delivery" && order.address && (
               <div className="bg-white rounded-xl p-3 col-span-2">
                 <p className="text-gray-400 mb-0.5">Deliver to</p>
                 <p className="text-gray-700 truncate">
-                  {order.address}{order.city ? `, ${order.city}` : ''}
+                  {order.address}
+                  {order.city ? `, ${order.city}` : ""}
                 </p>
               </div>
             )}
-            {order.deliveryType === 'pickup' && (
+            {order.deliveryType === "pickup" && (
               <div className="bg-white rounded-xl p-3 col-span-2">
                 <p className="text-gray-400 mb-0.5">Pick Up at</p>
                 <p className="text-gray-700">Ramz Square Branch</p>
@@ -159,7 +219,7 @@ function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatu
           </div>
 
           {/* Customer can only cancel their own pending order */}
-          {order.status === 'pending' && (
+          {order.status === "pending" && (
             <div className="flex gap-2 mt-2">
               <button
                 onClick={handleCancel}
@@ -176,14 +236,22 @@ function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatu
   );
 }
 
-export function OrderHistory({ isOpen, onClose, orders, onUpdateStatus }: OrderHistoryProps) {
+export function OrderHistory({
+  isOpen,
+  onClose,
+  orders,
+  onUpdateStatus,
+}: OrderHistoryProps) {
   if (!isOpen) return null;
 
   const sortedOrders = [...orders].reverse();
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
       <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-2xl flex flex-col rounded-l-3xl">
         {/* Header */}
@@ -191,7 +259,7 @@ export function OrderHistory({ isOpen, onClose, orders, onUpdateStatus }: OrderH
           <div>
             <h2 className="text-xl">Order History</h2>
             <p className="text-sm text-gray-400 mt-0.5">
-              {orders.length} order{orders.length !== 1 ? 's' : ''} placed
+              {orders.length} order{orders.length !== 1 ? "s" : ""} placed
             </p>
           </div>
           <button
@@ -210,12 +278,18 @@ export function OrderHistory({ isOpen, onClose, orders, onUpdateStatus }: OrderH
                 <Receipt className="w-9 h-9 text-gray-300" />
               </div>
               <p className="text-gray-400">No orders yet</p>
-              <p className="text-sm text-gray-300 mt-1">Your order history will appear here</p>
+              <p className="text-sm text-gray-300 mt-1">
+                Your order history will appear here
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
               {sortedOrders.map((order) => (
-                <OrderCard key={order.id || order.date} order={order} onUpdateStatus={onUpdateStatus} />
+                <OrderCard
+                  key={order.id || order.date}
+                  order={order}
+                  onUpdateStatus={onUpdateStatus}
+                />
               ))}
             </div>
           )}

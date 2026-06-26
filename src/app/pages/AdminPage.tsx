@@ -109,20 +109,25 @@ const STATUS_CONFIG: Record<
     badge: "bg-amber-50 text-amber-700 border border-amber-200",
     dot: "bg-amber-400",
   },
+  preparing: {
+    label: "Preparing",
+    badge: "bg-blue-50 text-blue-700 border border-blue-200",
+    dot: "bg-blue-400",
+  },
+  ready: {
+    label: "Ready",
+    badge: "bg-purple-50 text-purple-700 border border-purple-200",
+    dot: "bg-purple-400",
+  },
+  completed: {
+    label: "Completed",
+    badge: "bg-green-50 text-green-700 border border-green-200",
+    dot: "bg-green-400",
+  },
   cancelled: {
     label: "Cancelled",
     badge: "bg-red-50 text-red-700 border border-red-200",
     dot: "bg-red-400",
-  },
-  ongoing: {
-    label: "In Progress",
-    badge: "bg-blue-50 text-blue-700 border border-blue-200",
-    dot: "bg-blue-400",
-  },
-  received: {
-    label: "Completed",
-    badge: "bg-green-50 text-green-700 border border-green-200",
-    dot: "bg-green-400",
   },
 };
 
@@ -605,12 +610,12 @@ function DashboardSection() {
     .filter((o) => o.status !== "cancelled")
     .reduce((s, o) => s + o.total, 0);
   const totalOrders = orders.length;
-  const completedOrders = orders.filter((o) => o.status === "received").length;
+  const completedOrders = orders.filter((o) => o.status === "completed").length;
   const avgOrder =
     completedOrders > 0
       ? Math.round(
           orders
-            .filter((o) => o.status === "received")
+            .filter((o) => o.status === "completed")
             .reduce((s, o) => s + o.total, 0) / completedOrders,
         )
       : 0;
@@ -1150,7 +1155,7 @@ function TransactionsSection() {
     .filter((o) => o.status !== "cancelled")
     .reduce((s, o) => s + o.total, 0);
   const completedRevenue = orders
-    .filter((o) => o.status === "received")
+    .filter((o) => o.status === "completed")
     .reduce((s, o) => s + o.total, 0);
   const gcashRevenue = orders
     .filter((o) => o.paymentMethod === "gcash" && o.status !== "cancelled")
@@ -1438,7 +1443,7 @@ function TransactionsSection() {
           {
             label: "Completed",
             value: `₱${completedRevenue.toLocaleString()}`,
-            sub: `${orders.filter((o) => o.status === "received").length} orders`,
+            sub: `${orders.filter((o) => o.status === "completed").length} orders`,
             gradient: "from-blue-50 to-sky-50",
             border: "border-blue-200/60",
           },
@@ -1512,8 +1517,9 @@ function TransactionsSection() {
         >
           <option value="all">All Statuses</option>
           <option value="pending">Pending</option>
-          <option value="ongoing">In Progress</option>
-          <option value="received">Completed</option>
+          <option value="preparing">Preparing</option>
+          <option value="ready">Ready</option>
+          <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
         </select>
         <select
@@ -1570,11 +1576,13 @@ function TransactionsSection() {
                 className={`bg-white rounded-3xl border shadow-md hover:shadow-lg transition-all overflow-hidden ${
                   o.status === "pending"
                     ? "border-amber-200/60"
-                    : o.status === "ongoing"
+                    : o.status === "preparing"
                       ? "border-blue-200/60"
-                      : o.status === "received"
-                        ? "border-green-200/40"
-                        : "border-gray-200/50"
+                      : o.status === "ready"
+                        ? "border-purple-200/60"
+                        : o.status === "completed"
+                          ? "border-green-200/40"
+                          : "border-gray-200/50"
                 }`}
               >
                 <div
@@ -1704,7 +1712,9 @@ function TransactionsSection() {
                             </div>
                           )}
                         </div>
-                        {(o.status === "pending" || o.status === "ongoing") && (
+                        {(o.status === "pending" ||
+                          o.status === "preparing" ||
+                          o.status === "ready") && (
                           <div className="flex gap-2 mt-3">
                             {o.status === "pending" && (
                               <button
@@ -1722,15 +1732,19 @@ function TransactionsSection() {
                                 updateOrderStatus(
                                   o.id,
                                   o.status === "pending"
-                                    ? "ongoing"
-                                    : "received",
+                                    ? "preparing"
+                                    : o.status === "preparing"
+                                      ? "ready"
+                                      : "completed",
                                 )
                               }
                               className="flex-1 px-4 py-2.5 text-xs bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl hover:shadow-lg hover:scale-105 transition-all"
                             >
                               {o.status === "pending"
-                                ? "Mark In Progress"
-                                : "Mark Completed"}
+                                ? "Mark Preparing"
+                                : o.status === "preparing"
+                                  ? "Mark Ready"
+                                  : "Mark Completed"}
                             </button>
                           </div>
                         )}
@@ -1749,8 +1763,9 @@ function TransactionsSection() {
         {(
           [
             "pending",
-            "ongoing",
-            "received",
+            "preparing",
+            "ready",
+            "completed",
             "cancelled",
           ] as SavedOrder["status"][]
         ).map((s) => {

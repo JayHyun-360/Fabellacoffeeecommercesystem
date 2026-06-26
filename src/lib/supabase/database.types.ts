@@ -1,11 +1,16 @@
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
-export type AppRole = 'admin' | 'staff' | 'customer';
-export type ProductCategory = 'coffee' | 'food' | 'pastries' | 'beverages';
-export type DisplayType = 'regular' | 'set';
-export type OrderStatus = 'pending' | 'ongoing' | 'completed' | 'cancelled';
-export type OrderType = 'dine-in' | 'takeout' | 'delivery' | 'pickup';
-export type PaymentMethod = 'cod' | 'gcash' | 'card';
+export type AppRole = "admin" | "staff" | "customer";
+export type ProductCategory = "coffee" | "food" | "pastries" | "beverages";
+export type DisplayType = "regular" | "set";
+export type OrderStatus =
+  | "pending"
+  | "preparing"
+  | "ready"
+  | "completed"
+  | "cancelled";
+export type OrderType = "dine-in" | "takeout" | "delivery" | "pickup";
+export type PaymentMethod = "cod" | "gcash" | "card";
 
 // ─── Table Row Types ──────────────────────────────────────────────────────────
 
@@ -42,10 +47,17 @@ export interface Product {
   updated_at: string;
 }
 
+export interface OrderNotesData {
+  customer: string | null;
+  staff: string | null;
+  delivery: string | null;
+  internal: string | null;
+}
+
 export interface Order {
   id: string;
   queue_number: number;
-  customer_id: string | null;       // null for guest orders
+  customer_id: string | null; // null for guest orders
   customer_name: string;
   customer_email: string | null;
   customer_phone: string | null;
@@ -54,6 +66,7 @@ export interface Order {
   status: OrderStatus;
   total: number;
   notes: string | null;
+  notes_data: OrderNotesData | null;
   delivery_address: string | null;
   created_at: string;
   updated_at: string;
@@ -63,8 +76,8 @@ export interface OrderItem {
   id: string;
   order_id: string;
   product_id: string;
-  product_name: string;             // denormalized snapshot
-  product_price: number;            // snapshot at time of order
+  product_name: string; // denormalized snapshot
+  product_price: number; // snapshot at time of order
   quantity: number;
   subtotal: number;
 }
@@ -102,28 +115,28 @@ export interface Database {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: Omit<Profile, 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Profile, 'id' | 'created_at'>>;
+        Insert: Omit<Profile, "created_at" | "updated_at">;
+        Update: Partial<Omit<Profile, "id" | "created_at">>;
       };
       products: {
         Row: Product;
-        Insert: Omit<Product, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Product, 'id' | 'created_at'>>;
+        Insert: Omit<Product, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<Product, "id" | "created_at">>;
       };
       orders: {
         Row: Order;
-        Insert: Omit<Order, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Order, 'id' | 'created_at'>>;
+        Insert: Omit<Order, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<Order, "id" | "created_at">>;
       };
       order_items: {
         Row: OrderItem;
-        Insert: Omit<OrderItem, 'id' | 'subtotal'>;
-        Update: Partial<Omit<OrderItem, 'id' | 'order_id'>>;
+        Insert: Omit<OrderItem, "id" | "subtotal">;
+        Update: Partial<Omit<OrderItem, "id" | "order_id">>;
       };
       store_settings: {
         Row: StoreSettings;
-        Insert: Omit<StoreSettings, 'id' | 'updated_at'>;
-        Update: Partial<Omit<StoreSettings, 'id'>>;
+        Insert: Omit<StoreSettings, "id" | "updated_at">;
+        Update: Partial<Omit<StoreSettings, "id">>;
       };
     };
     Views: Record<string, never>;
