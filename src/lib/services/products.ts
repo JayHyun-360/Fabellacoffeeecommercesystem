@@ -42,7 +42,7 @@ export async function createProduct(
 ): Promise<Product> {
   const { data, error } = await supabase
     .from('products')
-    .insert(payload)
+    .insert([payload])
     .select()
     .single();
 
