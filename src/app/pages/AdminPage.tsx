@@ -1967,7 +1967,7 @@ function UsersManagementSection() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {[
           {
             label: "Total Users",
@@ -2003,7 +2003,7 @@ function UsersManagementSection() {
       </div>
 
       {/* Search + Refresh */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -2022,7 +2022,7 @@ function UsersManagementSection() {
         </button>
       </div>
 
-      {/* Users Table */}
+      {/* Users List */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin w-8 h-8 border-2 border-gray-300 border-t-black rounded-full" />
@@ -2033,97 +2033,178 @@ function UsersManagementSection() {
           <p>{search ? "No users match your search" : "No users found"}</p>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-gray-200/50 shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-gray-400 border-b border-gray-100 bg-gray-50/50">
-                  <th className="text-left px-5 py-3 font-normal">User</th>
-                  <th className="text-left px-5 py-3 font-normal hidden sm:table-cell">
-                    Email
-                  </th>
-                  <th className="text-left px-5 py-3 font-normal">Role</th>
-                  <th className="text-right px-5 py-3 font-normal">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filtered.map((profile) => {
-                  const cfg = ROLE_CONFIG[profile.role];
-                  return (
-                    <tr
-                      key={profile.id}
-                      className="hover:bg-gray-50/50 transition-colors"
-                    >
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          {profile.avatar_url ? (
-                            <img
-                              src={profile.avatar_url}
-                              alt=""
-                              className="w-8 h-8 rounded-full"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                              <UserCog className="w-4 h-4 text-gray-400" />
-                            </div>
-                          )}
-                          <div>
-                            <p className="truncate max-w-[150px]">
-                              {profile.full_name ??
-                                (profile.is_anonymous ? "Guest" : "Unknown")}
-                            </p>
-                            {profile.is_anonymous && (
-                              <span className="text-xs text-amber-600">
-                                Anonymous
-                              </span>
-                            )}
-                          </div>
+        <>
+          <div className="space-y-3 lg:hidden">
+            {filtered.map((profile) => {
+              const cfg = ROLE_CONFIG[profile.role];
+              const canEditRole =
+                profile.role !== "admin" && !profile.is_anonymous;
+              return (
+                <div
+                  key={profile.id}
+                  className="bg-white rounded-2xl border border-gray-200/50 shadow-sm p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {profile.avatar_url ? (
+                        <img
+                          src={profile.avatar_url}
+                          alt=""
+                          className="w-10 h-10 rounded-full flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <UserCog className="w-4 h-4 text-gray-400" />
                         </div>
-                      </td>
-                      <td className="px-5 py-4 text-gray-500 hidden sm:table-cell">
-                        <span className="truncate max-w-[200px] block">
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">
+                          {profile.full_name ??
+                            (profile.is_anonymous ? "Guest" : "Unknown")}
+                        </p>
+                        <p className="text-sm text-gray-500 break-all">
                           {profile.email ?? "—"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${cfg.badge}`}
-                        >
-                          {cfg.icon}
-                          {cfg.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-right">
-                        {profile.role !== "admin" && !profile.is_anonymous && (
-                          <select
-                            value={profile.role}
-                            disabled={updating === profile.id}
-                            onChange={(e) =>
-                              handleRoleChange(
-                                profile.id,
-                                e.target.value as AppRole,
-                              )
-                            }
-                            className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-black transition-colors disabled:opacity-50"
-                          >
-                            <option value="customer">Customer</option>
-                            <option value="staff">Staff</option>
-                          </select>
-                        )}
-                        {profile.role === "admin" && (
-                          <span className="text-xs text-purple-500">Owner</span>
-                        )}
+                        </p>
                         {profile.is_anonymous && (
-                          <span className="text-xs text-gray-400">Guest</span>
+                          <span className="text-xs text-amber-600">
+                            Anonymous
+                          </span>
                         )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${cfg.badge}`}
+                    >
+                      {cfg.icon}
+                      {cfg.label}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <span className="text-xs uppercase tracking-wider text-gray-400">
+                      Access
+                    </span>
+                    {canEditRole ? (
+                      <select
+                        value={profile.role}
+                        disabled={updating === profile.id}
+                        onChange={(e) =>
+                          handleRoleChange(
+                            profile.id,
+                            e.target.value as AppRole,
+                          )
+                        }
+                        className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-black transition-colors disabled:opacity-50"
+                      >
+                        <option value="customer">Customer</option>
+                        <option value="staff">Staff</option>
+                      </select>
+                    ) : profile.role === "admin" ? (
+                      <span className="text-xs text-purple-500">Owner</span>
+                    ) : (
+                      <span className="text-xs text-gray-400">Guest</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+
+          <div className="hidden lg:block bg-white rounded-3xl border border-gray-200/50 shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-gray-400 border-b border-gray-100 bg-gray-50/50">
+                    <th className="text-left px-5 py-3 font-normal">User</th>
+                    <th className="text-left px-5 py-3 font-normal">Email</th>
+                    <th className="text-left px-5 py-3 font-normal">Role</th>
+                    <th className="text-right px-5 py-3 font-normal">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {filtered.map((profile) => {
+                    const cfg = ROLE_CONFIG[profile.role];
+                    return (
+                      <tr
+                        key={profile.id}
+                        className="hover:bg-gray-50/50 transition-colors"
+                      >
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            {profile.avatar_url ? (
+                              <img
+                                src={profile.avatar_url}
+                                alt=""
+                                className="w-8 h-8 rounded-full"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                <UserCog className="w-4 h-4 text-gray-400" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="truncate max-w-[150px]">
+                                {profile.full_name ??
+                                  (profile.is_anonymous ? "Guest" : "Unknown")}
+                              </p>
+                              {profile.is_anonymous && (
+                                <span className="text-xs text-amber-600">
+                                  Anonymous
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-gray-500">
+                          <span className="truncate max-w-[220px] block">
+                            {profile.email ?? "—"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${cfg.badge}`}
+                          >
+                            {cfg.icon}
+                            {cfg.label}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          {profile.role !== "admin" &&
+                            !profile.is_anonymous && (
+                              <select
+                                value={profile.role}
+                                disabled={updating === profile.id}
+                                onChange={(e) =>
+                                  handleRoleChange(
+                                    profile.id,
+                                    e.target.value as AppRole,
+                                  )
+                                }
+                                className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-black transition-colors disabled:opacity-50"
+                              >
+                                <option value="customer">Customer</option>
+                                <option value="staff">Staff</option>
+                              </select>
+                            )}
+                          {profile.role === "admin" && (
+                            <span className="text-xs text-purple-500">
+                              Owner
+                            </span>
+                          )}
+                          {profile.is_anonymous && (
+                            <span className="text-xs text-gray-400">Guest</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
@@ -2962,32 +3043,6 @@ export function AdminPage() {
             {section === "privacy" && <AdminDataGovernance />}
           </div>
         </main>
-
-        {/* Bottom nav (mobile) */}
-        <nav className="lg:hidden bg-white border-t border-gray-100 flex flex-shrink-0 relative z-40">
-          {navItems.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => {
-                setSection(item.key);
-                if (item.key === "dashboard") clearUnreadOrders();
-              }}
-              className={`flex-1 flex flex-col items-center py-3 gap-0.5 text-xs transition-colors relative ${
-                section === item.key
-                  ? "text-black"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              {item.key === "dashboard" && unreadOrderCount > 0 && (
-                <span className="absolute top-2 right-1/4 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white animate-pulse" />
-              )}
-              {item.icon}
-              <span className="hidden sm:block">
-                {item.label.split(" ")[0]}
-              </span>
-            </button>
-          ))}
-        </nav>
       </div>
 
       {/* Global Toast Notification */}

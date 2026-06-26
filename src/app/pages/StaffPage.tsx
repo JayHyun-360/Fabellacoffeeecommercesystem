@@ -461,13 +461,13 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
               <div className="w-full h-px bg-gray-100 my-2" />
 
               <div
-                className={`flex items-center gap-2 text-xs pt-1 ${payment.color}`}
+                className={`flex flex-wrap items-center gap-2 text-xs pt-1 ${payment.color}`}
               >
                 {payment.icon}
                 <span className="font-semibold">Paid via {payment.label}</span>
                 {order.paymentMethod === "cod" &&
                   order.status === "pending" && (
-                    <span className="ml-auto text-amber-600 flex items-center gap-1 font-bold animate-pulse">
+                    <span className="sm:ml-auto text-amber-600 flex items-center gap-1 font-bold animate-pulse">
                       <AlertCircle className="w-3.5 h-3.5" />
                       Collect Cash
                     </span>
@@ -479,7 +479,7 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
                         e.stopPropagation();
                         setShowGCashQR(true);
                       }}
-                      className="ml-auto flex items-center gap-1.5 text-blue-600 hover:text-blue-700 transition-colors font-bold bg-blue-50 px-3 py-1 rounded-full border border-blue-100 shadow-sm"
+                      className="sm:ml-auto flex items-center gap-1.5 text-blue-600 hover:text-blue-700 transition-colors font-bold bg-blue-50 px-3 py-1 rounded-full border border-blue-100 shadow-sm"
                     >
                       <QrCode className="w-3.5 h-3.5" />
                       Show GCash QR
@@ -490,11 +490,11 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
 
             {/* CTAs / Action Buttons */}
             {isActive && (
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 {order.status === "pending" && (
                   <button
                     onClick={handleCancel}
-                    className="flex items-center justify-center gap-1.5 px-5 py-3.5 border border-red-200 text-red-600 rounded-2xl hover:bg-red-50 hover:shadow-md transition-all text-xs font-semibold"
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-5 py-3.5 border border-red-200 text-red-600 rounded-2xl hover:bg-red-50 hover:shadow-md transition-all text-xs font-semibold"
                   >
                     <XCircle className="w-4 h-4" />
                     Cancel Order
@@ -504,7 +504,7 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
                 order.status === "pending" ? (
                   <button
                     onClick={() => setShowGCashQR(true)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all text-xs font-semibold"
+                    className="w-full sm:flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all text-xs font-semibold"
                   >
                     <QrCode className="w-4 h-4" />
                     Show GCash QR Code
@@ -518,7 +518,7 @@ function StaffOrderCard({ order }: { order: SavedOrder }) {
                           ? handleComplete
                           : handleComplete
                     }
-                    className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all text-xs font-bold"
+                    className="w-full sm:flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all text-xs font-bold"
                   >
                     {order.status === "pending" ? (
                       <>
@@ -704,7 +704,7 @@ export function StaffPage() {
         </div>
 
         {/* Operational Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
           {[
             {
               label: "Pending",
@@ -749,7 +749,7 @@ export function StaffPage() {
           ].map((s) => (
             <div
               key={s.label}
-              className={`bg-gradient-to-br ${s.gradient} border ${s.border} rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm hover:shadow-md transition-all flex justify-between items-start group`}
+              className={`bg-gradient-to-br ${s.gradient} border ${s.border} rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row justify-between items-start gap-3 group`}
             >
               <div className="space-y-1.5 min-w-0 flex-1 pr-2">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider leading-none">
