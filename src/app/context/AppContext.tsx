@@ -407,7 +407,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         
         // Find the order to get its DB UUID
         const orderToUpdate = orders.find(o => o.id === id);
-        if (!orderToUpdate) return;
+        if (!orderToUpdate || !orderToUpdate.id) return;
         
         // Map frontend status back to DB status
         const dbStatus = status === 'received' ? 'completed' : status;
