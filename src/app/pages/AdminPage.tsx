@@ -733,13 +733,6 @@ function DashboardSection({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl mb-1">Dashboard</h2>
-        <p className="text-sm text-gray-400">
-          Overview of your store's performance
-        </p>
-      </div>
-
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {[
@@ -3113,20 +3106,12 @@ export function AdminPage() {
         <main className="flex-1 overflow-y-auto p-6 lg:p-8">
           <div className="max-w-7xl w-full mx-auto">
             {section === "dashboard" && (
-              <div className="space-y-6">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div>
-                    <h2 className="text-xl mb-1">Dashboard</h2>
-                    <p className="text-sm text-gray-400">
-                      Quick views for activity and recent orders
-                    </p>
-                  </div>
-                </div>
+              <div className="space-y-4">
                 <div className="lg:hidden">
                   <SectionTabs
                     items={[
                       { key: "overview", label: "Overview" },
-                      { key: "recent", label: "Recent Orders" },
+                      { key: "recent", label: "Recent" },
                     ]}
                     active={adminSubTab}
                     onChange={setAdminSubTab}
