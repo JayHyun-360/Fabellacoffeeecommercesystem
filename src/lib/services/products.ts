@@ -42,7 +42,7 @@ export async function createProduct(
 ): Promise<Product> {
   const { data, error } = await supabase
     .from('products')
-    .insert([payload])
+    .insert(payload as any)
     .select()
     .single();
 
@@ -56,7 +56,7 @@ export async function updateProduct(
 ): Promise<Product> {
   const { data, error } = await supabase
     .from('products')
-    .update(payload)
+    .update(payload as any)
     .eq('id', id)
     .select()
     .single();
@@ -76,7 +76,7 @@ export async function toggleProductAvailability(
 ): Promise<void> {
   const { error } = await supabase
     .from('products')
-    .update({ available })
+    .update({ available } as any)
     .eq('id', id);
   if (error) throw error;
 }
