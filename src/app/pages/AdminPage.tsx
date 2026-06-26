@@ -86,6 +86,20 @@ type AdminSection =
   | "manual"
   | "privacy";
 
+type AdminSubTab =
+  | "overview"
+  | "queue"
+  | "reports"
+  | "products"
+  | "bundles"
+  | "activity"
+  | "history"
+  | "roles"
+  | "guests"
+  | "info"
+  | "media"
+  | "payments";
+
 const CATEGORY_LABELS: Record<string, string> = {
   coffee: "Coffee",
   food: "Food",
@@ -575,6 +589,99 @@ function ProductModal({ product, onSave, onClose }: ProductModalProps) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function SectionTabs({
+  items,
+  active,
+  onChange,
+}: {
+  items: { key: AdminSubTab; label: string; icon: React.ReactNode }[];
+  active: AdminSubTab;
+  onChange: (key: AdminSubTab) => void;
+}) {
+  return (
+    <div className="flex overflow-x-auto pb-1 gap-2 mb-6">
+      {items.map((item) => {
+        const isActive = active === item.key;
+        return (
+          <button
+            key={item.key}
+            onClick={() => onChange(item.key)}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-full border whitespace-nowrap text-xs font-semibold transition-all ${
+              isActive
+                ? "bg-black text-white border-black shadow-sm"
+                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900"
+            }`}
+          >
+            <span className="w-4 h-4 flex items-center justify-center">
+              {item.icon}
+            </span>
+            <span>{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function DashboardQueueSummary() {
+  const { orders } = useApp();
+  const pendingCount = orders.filter((o) => o.status === "pending").length;
+  const preparingCount = orders.filter((o) => o.status === "preparing").length;
+  const readyCount = orders.filter((o) => o.status === "ready").length;
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <div className="bg-white rounded-3xl border border-gray-200/50 p-5 shadow-sm">
+        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">
+          Pending
+        </p>
+        <p className="text-3xl font-semibold text-gray-900">{pendingCount}</p>
+      </div>
+      <div className="bg-white rounded-3xl border border-gray-200/50 p-5 shadow-sm">
+        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">
+          Preparing
+        </p>
+        <p className="text-3xl font-semibold text-gray-900">{preparingCount}</p>
+      </div>
+      <div className="bg-white rounded-3xl border border-gray-200/50 p-5 shadow-sm">
+        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">
+          Ready
+        </p>
+        <p className="text-3xl font-semibold text-gray-900">{readyCount}</p>
+      </div>
+    </div>
+  );
+}
+
+function DashboardReportsSummary() {
+  const { orders } = useApp();
+  const totalRevenue = orders
+    .filter((o) => o.status !== "cancelled")
+    .reduce((s, o) => s + o.total, 0);
+  const completedOrders = orders.filter((o) => o.status === "completed").length;
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="bg-white rounded-3xl border border-gray-200/50 p-5 shadow-sm">
+        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">
+          Revenue
+        </p>
+        <p className="text-3xl font-semibold text-gray-900">
+          ₱{totalRevenue.toLocaleString()}
+        </p>
+      </div>
+      <div className="bg-white rounded-3xl border border-gray-200/50 p-5 shadow-sm">
+        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">
+          Completed
+        </p>
+        <p className="text-3xl font-semibold text-gray-900">
+          {completedOrders}
+        </p>
       </div>
     </div>
   );
@@ -2833,6 +2940,30 @@ export function AdminPage() {
   } = useApp();
   const [section, setSection] = useState<AdminSection>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [adminSubTab, setAdminSubTab] = useState<AdminSubTab>("overview");
+
+  useEffect(() => {
+    switch (section) {
+      case "dashboard":
+        setAdminSubTab("overview");
+        break;
+      case "menu":
+        setAdminSubTab("products");
+        break;
+      case "transactions":
+        setAdminSubTab("activity");
+        break;
+      case "users":
+        setAdminSubTab("roles");
+        break;
+      case "settings":
+        setAdminSubTab("info");
+        break;
+      default:
+        setAdminSubTab("overview");
+        break;
+    }
+  }, [section]);
 
   // Auto-dismiss toast
   useEffect(() => {
@@ -3034,11 +3165,193 @@ export function AdminPage() {
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-6 lg:p-8">
           <div className="max-w-7xl w-full mx-auto">
-            {section === "dashboard" && <DashboardSection />}
-            {section === "menu" && <MenuManagementSection />}
-            {section === "transactions" && <TransactionsSection />}
-            {section === "users" && <UsersManagementSection />}
-            {section === "settings" && <StoreSettingsSection />}
+            {section === "dashboard" && (
+              <div className="space-y-6">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div>
+                    <h2 className="text-xl mb-1">Dashboard</h2>
+                    <p className="text-sm text-gray-400">
+                      Switch between overview, queue, and reports
+                    </p>
+                  </div>
+                </div>
+                <SectionTabs
+                  items={[
+                    {
+                      key: "overview",
+                      label: "Overview",
+                      icon: <LayoutDashboard className="w-3.5 h-3.5" />,
+                    },
+                    {
+                      key: "queue",
+                      label: "Queue",
+                      icon: <Clock className="w-3.5 h-3.5" />,
+                    },
+                    {
+                      key: "reports",
+                      label: "Reports",
+                      icon: <BarChart3 className="w-3.5 h-3.5" />,
+                    },
+                  ]}
+                  active={adminSubTab}
+                  onChange={setAdminSubTab}
+                />
+                {adminSubTab === "overview" ? (
+                  <DashboardSection />
+                ) : adminSubTab === "queue" ? (
+                  <DashboardQueueSummary />
+                ) : (
+                  <DashboardReportsSummary />
+                )}
+              </div>
+            )}
+            {section === "menu" && (
+              <div className="space-y-6">
+                <SectionTabs
+                  items={[
+                    {
+                      key: "products",
+                      label: "Products",
+                      icon: <Coffee className="w-3.5 h-3.5" />,
+                    },
+                    {
+                      key: "bundles",
+                      label: "Bundles",
+                      icon: <Layers className="w-3.5 h-3.5" />,
+                    },
+                  ]}
+                  active={adminSubTab}
+                  onChange={setAdminSubTab}
+                />
+                {adminSubTab === "products" ? (
+                  <MenuManagementSection />
+                ) : (
+                  <div className="bg-white rounded-3xl border border-gray-200/50 p-6 shadow-sm">
+                    <p className="text-sm font-semibold text-gray-900">
+                      Bundle / combo setups
+                    </p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Set-based menu bundles can be managed from the product
+                      editor and shown here as compact package views.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            {section === "transactions" && (
+              <div className="space-y-6">
+                <SectionTabs
+                  items={[
+                    {
+                      key: "activity",
+                      label: "Activity",
+                      icon: <Receipt className="w-3.5 h-3.5" />,
+                    },
+                    {
+                      key: "history",
+                      label: "History",
+                      icon: <History className="w-3.5 h-3.5" />,
+                    },
+                  ]}
+                  active={adminSubTab}
+                  onChange={setAdminSubTab}
+                />
+                {adminSubTab === "activity" ? (
+                  <TransactionsSection />
+                ) : (
+                  <div className="bg-white rounded-3xl border border-gray-200/50 p-6 shadow-sm">
+                    <p className="text-sm font-semibold text-gray-900">
+                      Archived sales ledgers
+                    </p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Your saved reports and transaction archives stay here for
+                      quick review without filling the full transaction view.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            {section === "users" && (
+              <div className="space-y-6">
+                <SectionTabs
+                  items={[
+                    {
+                      key: "roles",
+                      label: "Roles",
+                      icon: <UserCog className="w-3.5 h-3.5" />,
+                    },
+                    {
+                      key: "guests",
+                      label: "Guests",
+                      icon: <Users2 className="w-3.5 h-3.5" />,
+                    },
+                  ]}
+                  active={adminSubTab}
+                  onChange={setAdminSubTab}
+                />
+                {adminSubTab === "roles" ? (
+                  <UsersManagementSection />
+                ) : (
+                  <div className="bg-white rounded-3xl border border-gray-200/50 p-6 shadow-sm">
+                    <p className="text-sm font-semibold text-gray-900">
+                      Guest & anonymous sessions
+                    </p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Anonymous sign-ins and guest sessions appear here as a
+                      compact view so user management stays focused.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            {section === "settings" && (
+              <div className="space-y-6">
+                <SectionTabs
+                  items={[
+                    {
+                      key: "info",
+                      label: "Info",
+                      icon: <Settings className="w-3.5 h-3.5" />,
+                    },
+                    {
+                      key: "media",
+                      label: "Media",
+                      icon: <Image className="w-3.5 h-3.5" />,
+                    },
+                    {
+                      key: "payments",
+                      label: "Payments",
+                      icon: <Banknote className="w-3.5 h-3.5" />,
+                    },
+                  ]}
+                  active={adminSubTab}
+                  onChange={setAdminSubTab}
+                />
+                {adminSubTab === "info" ? (
+                  <StoreSettingsSection />
+                ) : adminSubTab === "media" ? (
+                  <div className="bg-white rounded-3xl border border-gray-200/50 p-6 shadow-sm">
+                    <p className="text-sm font-semibold text-gray-900">
+                      Hero media & store visuals
+                    </p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Manage promo slides and visual assets here in a lighter,
+                      focused view.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-3xl border border-gray-200/50 p-6 shadow-sm">
+                    <p className="text-sm font-semibold text-gray-900">
+                      Payment setup
+                    </p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      GCash and payment-related fields stay grouped for faster
+                      adjustment.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
             {section === "manual" && <AdminSystemManual />}
             {section === "privacy" && <AdminDataGovernance />}
           </div>
