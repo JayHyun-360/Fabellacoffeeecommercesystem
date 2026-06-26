@@ -3,7 +3,6 @@ import { useState } from 'react';
 
 export interface SavedOrder {
   id?: string;
-  orderNumber: string;
   date: string;
   items: { id: string; name: string; price: number; quantity: number; image?: string }[];
   subtotal: number;
@@ -24,7 +23,7 @@ interface OrderHistoryProps {
   isOpen: boolean;
   onClose: () => void;
   orders: SavedOrder[];
-  onUpdateStatus: (orderNumber: string, newStatus: SavedOrder['status']) => void;
+  onUpdateStatus: (id: string, newStatus: SavedOrder['status']) => void;
 }
 
 const STATUS_CONFIG: Record<SavedOrder['status'], { label: string; color: string; bg: string }> = {
@@ -54,13 +53,13 @@ const ORDER_TYPE_LABELS: Record<SavedOrder['deliveryType'], string> = {
   'takeout':  'Takeout',
 };
 
-function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatus: (orderNumber: string, newStatus: SavedOrder['status']) => void }) {
+function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatus: (id: string, newStatus: SavedOrder['status']) => void }) {
   const [expanded, setExpanded] = useState(false);
   const status = STATUS_CONFIG[order.status];
 
   const handleCancel = () => {
-    if (confirm('Are you sure you want to cancel this order?')) {
-      onUpdateStatus(order.orderNumber, 'cancelled');
+    if (confirm('Are you sure you want to cancel this order?') && order.id) {
+      onUpdateStatus(order.id, 'cancelled');
     }
   };
 
@@ -77,7 +76,6 @@ function OrderCard({ order, onUpdateStatus }: { order: SavedOrder; onUpdateStatu
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm tracking-wider">{order.orderNumber}</p>
             <span className={`text-xs px-2 py-0.5 rounded-full ${status.bg} ${status.color}`}>
               {status.label}
             </span>
@@ -217,7 +215,7 @@ export function OrderHistory({ isOpen, onClose, orders, onUpdateStatus }: OrderH
           ) : (
             <div className="space-y-3">
               {sortedOrders.map((order) => (
-                <OrderCard key={order.orderNumber} order={order} onUpdateStatus={onUpdateStatus} />
+                <OrderCard key={order.id || order.date} order={order} onUpdateStatus={onUpdateStatus} />
               ))}
             </div>
           )}

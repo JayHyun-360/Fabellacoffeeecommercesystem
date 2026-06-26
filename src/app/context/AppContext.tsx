@@ -103,7 +103,7 @@ interface AppContextType {
   settings: StoreSettings;
   productsLoading: boolean;
   addOrder: (order: SavedOrder) => Promise<SavedOrder>;
-  updateOrderStatus: (orderNumber: string, status: SavedOrder['status']) => void;
+  updateOrderStatus: (id: string, status: SavedOrder['status']) => void;
   addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
@@ -282,7 +282,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const items = order.order_items || [];
           return {
             id: order.id,
-            orderNumber: order.queue_number ? `Q-${order.queue_number.toString().padStart(4, '0')}` : 'Q-0000',
             date: new Date(order.created_at).toLocaleDateString(),
             items: items.map((i: any) => ({
               id: i.product_id || '',
@@ -382,17 +381,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
           finalOrder = {
             ...order,
             id: created.id,
-            orderNumber: created.queue_number ? `Q-${created.queue_number.toString().padStart(4, '0')}` : 'Q-0000',
           };
         }
       } catch (err) {
         console.error('Failed to save order to Supabase:', err);
       }
     } else {
-      const mockQueue = Math.floor(Math.random() * 900) + 100;
       finalOrder = {
         ...order,
-        orderNumber: `Q-${mockQueue.toString().padStart(4, '0')}`,
+        id: crypto.randomUUID(),
       };
     }
 
@@ -400,17 +397,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return finalOrder;
   };
 
-  const updateOrderStatus = async (orderNumber: string, status: SavedOrder['status']) => {
+  const updateOrderStatus = async (id: string, status: SavedOrder['status']) => {
     // Optimistic UI update
-    setOrders((prev) => prev.map((o) => (o.orderNumber === orderNumber ? { ...o, status } : o)));
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
 
     if (isSupabaseConfigured) {
       try {
         const supabase = createClient();
         
         // Find the order to get its DB UUID
-        const orderToUpdate = orders.find(o => o.orderNumber === orderNumber);
-        if (!orderToUpdate || !orderToUpdate.id) return;
+        const orderToUpdate = orders.find(o => o.id === id);
+        if (!orderToUpdate) return;
         
         // Map frontend status back to DB status
         const dbStatus = status === 'received' ? 'completed' : status;

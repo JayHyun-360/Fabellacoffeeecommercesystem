@@ -518,7 +518,6 @@ function DashboardSection() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-400 border-b border-gray-50">
-                  <th className="text-left pb-3 font-normal">Queue #</th>
                   <th className="text-left pb-3 font-normal">Customer</th>
                   <th className="text-left pb-3 font-normal hidden sm:table-cell">Date</th>
                   <th className="text-right pb-3 font-normal">Total</th>
@@ -527,8 +526,7 @@ function DashboardSection() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {recentOrders.map((o) => (
-                  <tr key={o.orderNumber} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="py-3 text-xs text-gray-500">{o.orderNumber}</td>
+                  <tr key={o.id || o.date} className="hover:bg-gray-50/50 transition-colors">
                     <td className="py-3">{o.name}</td>
                     <td className="py-3 text-gray-400 hidden sm:table-cell text-xs">{o.date}</td>
                     <td className="py-3 text-right">₱{o.total}</td>
@@ -770,7 +768,6 @@ function TransactionsSection() {
     const matchType = typeFilter === 'all' || o.deliveryType === typeFilter;
     const matchPayment = paymentFilter === 'all' || o.paymentMethod === paymentFilter;
     const matchSearch =
-      o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
       o.name.toLowerCase().includes(search.toLowerCase());
     return matchStatus && matchType && matchPayment && matchSearch;
   });
@@ -976,7 +973,6 @@ function TransactionsSection() {
                             {snapOrders.map((ord: any, idx: number) => (
                               <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-100/50 last:border-0">
                                 <div>
-                                  <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 mr-2">{ord.orderNumber}</span>
                                   <span className="text-gray-700">{ord.name}</span>
                                 </div>
                                 <span className="font-semibold text-gray-900">₱{ord.total.toLocaleString()}</span>
@@ -1077,17 +1073,17 @@ function TransactionsSection() {
             const statusCfg = STATUS_CONFIG[o.status];
             const typeCfg = ORDER_TYPE_CFG[o.deliveryType] ?? { label: o.deliveryType, bg: 'bg-gray-50', text: 'text-gray-600' };
             const paymentCfg = PAYMENT_CFG[o.paymentMethod] ?? { label: o.paymentMethod, color: 'text-gray-600', icon: null };
-            const isExpanded = expandedOrder === o.orderNumber;
+            const isExpanded = expandedOrder === o.id;
 
             return (
-              <div key={o.orderNumber} className={`bg-white rounded-3xl border shadow-md hover:shadow-lg transition-all overflow-hidden ${
+              <div key={o.id || o.date} className={`bg-white rounded-3xl border shadow-md hover:shadow-lg transition-all overflow-hidden ${
                 o.status === 'pending' ? 'border-amber-200/60' :
                 o.status === 'ongoing' ? 'border-blue-200/60' :
                 o.status === 'received' ? 'border-green-200/40' : 'border-gray-200/50'
               }`}>
                 <div
                   className="p-4 cursor-pointer hover:bg-gray-50/40 transition-colors"
-                  onClick={() => setExpandedOrder(isExpanded ? null : o.orderNumber)}
+                  onClick={() => setExpandedOrder(isExpanded ? null : (o.id || o.date))}
                 >
                   <div className="flex items-center gap-3 flex-wrap">
                     <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${statusCfg.dot}`} />
@@ -1159,12 +1155,12 @@ function TransactionsSection() {
                         {(o.status === 'pending' || o.status === 'ongoing') && (
                           <div className="flex gap-2 mt-3">
                             {o.status === 'pending' && (
-                              <button onClick={() => updateOrderStatus(o.orderNumber, 'cancelled')}
+                              <button onClick={() => o.id && updateOrderStatus(o.id, 'cancelled')}
                                 className="px-4 py-2.5 text-xs border border-red-200 text-red-600 rounded-2xl hover:bg-red-50 hover:shadow-md transition-all">
                                 Cancel
                               </button>
                             )}
-                            <button onClick={() => updateOrderStatus(o.orderNumber, o.status === 'pending' ? 'ongoing' : 'received')}
+                            <button onClick={() => o.id && updateOrderStatus(o.id, o.status === 'pending' ? 'ongoing' : 'received')}
                               className="flex-1 px-4 py-2.5 text-xs bg-gradient-to-br from-gray-900 to-black text-white rounded-2xl hover:shadow-lg hover:scale-105 transition-all">
                               {o.status === 'pending' ? 'Mark In Progress' : 'Mark Completed'}
                             </button>

@@ -103,13 +103,13 @@ function StaffOrderCard({ order, queueNum }: { order: SavedOrder; queueNum: stri
   const orderType = ORDER_TYPE_CONFIG[order.deliveryType];
   const payment = PAYMENT_INFO[order.paymentMethod] || PAYMENT_INFO['cod'];
 
-  const handleAccept = () => updateOrderStatus(order.orderNumber, 'ongoing');
-  const handleComplete = () => updateOrderStatus(order.orderNumber, 'received');
+  const handleAccept = () => { if (order.id) updateOrderStatus(order.id, 'ongoing'); };
+  const handleComplete = () => { if (order.id) updateOrderStatus(order.id, 'received'); };
   const handleCancel = () => {
-    if (confirm('Cancel this order?')) updateOrderStatus(order.orderNumber, 'cancelled');
+    if (confirm('Cancel this order?') && order.id) updateOrderStatus(order.id, 'cancelled');
   };
   const handleGCashPaid = () => {
-    updateOrderStatus(order.orderNumber, order.status === 'pending' ? 'ongoing' : 'received');
+    if (order.id) updateOrderStatus(order.id, order.status === 'pending' ? 'ongoing' : 'received');
     setShowGCashQR(false);
   };
 
@@ -513,7 +513,7 @@ export function StaffPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {sorted.map((order) => (
-              <StaffOrderCard key={order.orderNumber} order={order} queueNum={order.orderNumber} />
+              <StaffOrderCard key={order.id || order.date} order={order} queueNum={order.id || ''} />
             ))}
           </div>
         )}

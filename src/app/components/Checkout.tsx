@@ -471,10 +471,9 @@ function PaymentStep({ details, items, onChange, onNext, onBack, placingOrder }:
   );
 }
 
-function OrderConfirmation({ details, items, orderNumber, onClose }: {
+function OrderConfirmation({ details, items, onClose }: {
   details: OrderDetails;
   items: CartItem[];
-  orderNumber: string;
   onClose: () => void;
 }) {
   const { settings } = useApp();
@@ -562,7 +561,6 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
   const [step, setStep] = useState(0);
   const [signingIn, setSigningIn] = useState(false);
   const [placingOrder, setPlacingOrder] = useState(false);
-  const [orderNumber, setOrderNumber] = useState('');
   const [details, setDetails] = useState<OrderDetails>({
     name: '',
     phone: '',
@@ -618,7 +616,6 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
       });
 
       const orderPayload: SavedOrder = {
-        orderNumber: '', // Will be set by addOrder
         date: dateStr,
         items: items.map((i) => ({
           id: i.id,
@@ -641,7 +638,6 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
       };
 
       const savedOrder = await addOrder(orderPayload);
-      setOrderNumber(savedOrder.orderNumber);
       setStep(3); // Go to confirmation page
       onOrderComplete(savedOrder); // Empty cart
     } catch (err) {
@@ -780,7 +776,6 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
             <OrderConfirmation
               details={details}
               items={items}
-              orderNumber={orderNumber}
               onClose={handleClose}
             />
           )}
