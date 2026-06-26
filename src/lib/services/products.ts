@@ -3,8 +3,8 @@
 // When Supabase is connected, swap the implementations below with
 // supabase.from('products').select/insert/update/delete calls.
 
-import { supabase } from '@/lib/supabase/client';
-import type { Product, ProductCategory } from '@/lib/supabase/database.types';
+import { supabase } from "@/lib/supabase/client";
+import type { Product, ProductCategory } from "@/lib/supabase/database.types";
 
 export type { Product, ProductCategory };
 
@@ -12,24 +12,24 @@ export type { Product, ProductCategory };
 
 export async function fetchProducts(): Promise<Product[]> {
   const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('category')
-    .order('name');
+    .from("products")
+    .select("*")
+    .order("category")
+    .order("name");
 
   if (error) throw error;
   return data ?? [];
 }
 
 export async function fetchProductsByCategory(
-  category: ProductCategory
+  category: ProductCategory,
 ): Promise<Product[]> {
   const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('category', category)
-    .eq('available', true)
-    .order('name');
+    .from("products")
+    .select("*")
+    .eq("category", category)
+    .eq("available", true)
+    .order("name");
 
   if (error) throw error;
   return data ?? [];
@@ -38,11 +38,11 @@ export async function fetchProductsByCategory(
 // ─── Write (admin only) ───────────────────────────────────────────────────────
 
 export async function createProduct(
-  payload: Omit<Product, 'id' | 'created_at' | 'updated_at'>
+  payload: Omit<Product, "id" | "created_at" | "updated_at">,
 ): Promise<Product> {
-  const { data, error } = await supabase
-    .from('products')
-    .insert(payload as any)
+  const { data, error } = await (supabase as any)
+    .from("products")
+    .insert(payload)
     .select()
     .single();
 
@@ -52,12 +52,12 @@ export async function createProduct(
 
 export async function updateProduct(
   id: string,
-  payload: Partial<Omit<Product, 'id' | 'created_at'>>
+  payload: Partial<Omit<Product, "id" | "created_at">>,
 ): Promise<Product> {
-  const { data, error } = await supabase
-    .from('products')
-    .update(payload as any)
-    .eq('id', id)
+  const { data, error } = await (supabase as any)
+    .from("products")
+    .update(payload)
+    .eq("id", id)
     .select()
     .single();
 
@@ -66,17 +66,20 @@ export async function updateProduct(
 }
 
 export async function deleteProduct(id: string): Promise<void> {
-  const { error } = await supabase.from('products').delete().eq('id', id);
+  const { error } = await (supabase as any)
+    .from("products")
+    .delete()
+    .eq("id", id);
   if (error) throw error;
 }
 
 export async function toggleProductAvailability(
   id: string,
-  available: boolean
+  available: boolean,
 ): Promise<void> {
-  const { error } = await supabase
-    .from('products')
-    .update({ available } as any)
-    .eq('id', id);
+  const { error } = await (supabase as any)
+    .from("products")
+    .update({ available })
+    .eq("id", id);
   if (error) throw error;
 }
