@@ -599,28 +599,25 @@ function SectionTabs({
   active,
   onChange,
 }: {
-  items: { key: AdminSubTab; label: string; icon: React.ReactNode }[];
+  items: { key: AdminSubTab; label: string }[];
   active: AdminSubTab;
   onChange: (key: AdminSubTab) => void;
 }) {
   return (
-    <div className="flex overflow-x-auto pb-1 gap-2 mb-6">
+    <div className="flex flex-wrap gap-2 mb-5">
       {items.map((item) => {
         const isActive = active === item.key;
         return (
           <button
             key={item.key}
             onClick={() => onChange(item.key)}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-full border whitespace-nowrap text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
               isActive
-                ? "bg-black text-white border-black shadow-sm"
-                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900"
+                ? "bg-gray-900 text-white shadow-sm"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            <span className="w-4 h-4 flex items-center justify-center">
-              {item.icon}
-            </span>
-            <span>{item.label}</span>
+            {item.label}
           </button>
         );
       })}
@@ -3171,27 +3168,15 @@ export function AdminPage() {
                   <div>
                     <h2 className="text-xl mb-1">Dashboard</h2>
                     <p className="text-sm text-gray-400">
-                      Switch between overview, queue, and reports
+                      Quick views for activity, queue, and reports
                     </p>
                   </div>
                 </div>
                 <SectionTabs
                   items={[
-                    {
-                      key: "overview",
-                      label: "Overview",
-                      icon: <LayoutDashboard className="w-3.5 h-3.5" />,
-                    },
-                    {
-                      key: "queue",
-                      label: "Queue",
-                      icon: <Clock className="w-3.5 h-3.5" />,
-                    },
-                    {
-                      key: "reports",
-                      label: "Reports",
-                      icon: <BarChart3 className="w-3.5 h-3.5" />,
-                    },
+                    { key: "overview", label: "Overview" },
+                    { key: "queue", label: "Queue" },
+                    { key: "reports", label: "Reports" },
                   ]}
                   active={adminSubTab}
                   onChange={setAdminSubTab}
@@ -3207,149 +3192,22 @@ export function AdminPage() {
             )}
             {section === "menu" && (
               <div className="space-y-6">
-                <SectionTabs
-                  items={[
-                    {
-                      key: "products",
-                      label: "Products",
-                      icon: <Coffee className="w-3.5 h-3.5" />,
-                    },
-                    {
-                      key: "bundles",
-                      label: "Bundles",
-                      icon: <Layers className="w-3.5 h-3.5" />,
-                    },
-                  ]}
-                  active={adminSubTab}
-                  onChange={setAdminSubTab}
-                />
-                {adminSubTab === "products" ? (
-                  <MenuManagementSection />
-                ) : (
-                  <div className="bg-white rounded-3xl border border-gray-200/50 p-6 shadow-sm">
-                    <p className="text-sm font-semibold text-gray-900">
-                      Bundle / combo setups
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Set-based menu bundles can be managed from the product
-                      editor and shown here as compact package views.
-                    </p>
-                  </div>
-                )}
+                <MenuManagementSection />
               </div>
             )}
             {section === "transactions" && (
               <div className="space-y-6">
-                <SectionTabs
-                  items={[
-                    {
-                      key: "activity",
-                      label: "Activity",
-                      icon: <Receipt className="w-3.5 h-3.5" />,
-                    },
-                    {
-                      key: "history",
-                      label: "History",
-                      icon: <History className="w-3.5 h-3.5" />,
-                    },
-                  ]}
-                  active={adminSubTab}
-                  onChange={setAdminSubTab}
-                />
-                {adminSubTab === "activity" ? (
-                  <TransactionsSection />
-                ) : (
-                  <div className="bg-white rounded-3xl border border-gray-200/50 p-6 shadow-sm">
-                    <p className="text-sm font-semibold text-gray-900">
-                      Archived sales ledgers
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Your saved reports and transaction archives stay here for
-                      quick review without filling the full transaction view.
-                    </p>
-                  </div>
-                )}
+                <TransactionsSection />
               </div>
             )}
             {section === "users" && (
               <div className="space-y-6">
-                <SectionTabs
-                  items={[
-                    {
-                      key: "roles",
-                      label: "Roles",
-                      icon: <UserCog className="w-3.5 h-3.5" />,
-                    },
-                    {
-                      key: "guests",
-                      label: "Guests",
-                      icon: <Users2 className="w-3.5 h-3.5" />,
-                    },
-                  ]}
-                  active={adminSubTab}
-                  onChange={setAdminSubTab}
-                />
-                {adminSubTab === "roles" ? (
-                  <UsersManagementSection />
-                ) : (
-                  <div className="bg-white rounded-3xl border border-gray-200/50 p-6 shadow-sm">
-                    <p className="text-sm font-semibold text-gray-900">
-                      Guest & anonymous sessions
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Anonymous sign-ins and guest sessions appear here as a
-                      compact view so user management stays focused.
-                    </p>
-                  </div>
-                )}
+                <UsersManagementSection />
               </div>
             )}
             {section === "settings" && (
               <div className="space-y-6">
-                <SectionTabs
-                  items={[
-                    {
-                      key: "info",
-                      label: "Info",
-                      icon: <Settings className="w-3.5 h-3.5" />,
-                    },
-                    {
-                      key: "media",
-                      label: "Media",
-                      icon: <Image className="w-3.5 h-3.5" />,
-                    },
-                    {
-                      key: "payments",
-                      label: "Payments",
-                      icon: <Banknote className="w-3.5 h-3.5" />,
-                    },
-                  ]}
-                  active={adminSubTab}
-                  onChange={setAdminSubTab}
-                />
-                {adminSubTab === "info" ? (
-                  <StoreSettingsSection />
-                ) : adminSubTab === "media" ? (
-                  <div className="bg-white rounded-3xl border border-gray-200/50 p-6 shadow-sm">
-                    <p className="text-sm font-semibold text-gray-900">
-                      Hero media & store visuals
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Manage promo slides and visual assets here in a lighter,
-                      focused view.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-3xl border border-gray-200/50 p-6 shadow-sm">
-                    <p className="text-sm font-semibold text-gray-900">
-                      Payment setup
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      GCash and payment-related fields stay grouped for faster
-                      adjustment.
-                    </p>
-                  </div>
-                )}
+                <StoreSettingsSection />
               </div>
             )}
             {section === "manual" && <AdminSystemManual />}
