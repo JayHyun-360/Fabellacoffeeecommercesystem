@@ -3122,11 +3122,7 @@ export function AdminPage() {
                 orders.length > 0 ? (
                   <RecentOrdersPanel recentOrders={orders.slice(0, 5)} />
                 ) : (
-                  <DashboardSection
-                    includeRecentOrders={
-                      !isMobileViewport || adminSubTab === "overview"
-                    }
-                  />
+                  <DashboardSection includeRecentOrders={!isMobileViewport} />
                 )}
               </div>
             )}
