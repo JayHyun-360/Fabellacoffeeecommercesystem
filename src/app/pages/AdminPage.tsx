@@ -86,19 +86,7 @@ type AdminSection =
   | "manual"
   | "privacy";
 
-type AdminSubTab =
-  | "overview"
-  | "queue"
-  | "reports"
-  | "products"
-  | "bundles"
-  | "activity"
-  | "history"
-  | "roles"
-  | "guests"
-  | "info"
-  | "media"
-  | "payments";
+type AdminSubTab = "overview" | "recent" | "main" | "info";
 
 const CATEGORY_LABELS: Record<string, string> = {
   coffee: "Coffee",
@@ -625,68 +613,62 @@ function SectionTabs({
   );
 }
 
-function DashboardQueueSummary() {
-  const { orders } = useApp();
-  const pendingCount = orders.filter((o) => o.status === "pending").length;
-  const preparingCount = orders.filter((o) => o.status === "preparing").length;
-  const readyCount = orders.filter((o) => o.status === "ready").length;
-
+function RecentOrdersPanel({ recentOrders }: { recentOrders: SavedOrder[] }) {
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <div className="bg-white rounded-3xl border border-gray-200/50 p-5 shadow-sm">
-        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">
-          Pending
-        </p>
-        <p className="text-3xl font-semibold text-gray-900">{pendingCount}</p>
-      </div>
-      <div className="bg-white rounded-3xl border border-gray-200/50 p-5 shadow-sm">
-        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">
-          Preparing
-        </p>
-        <p className="text-3xl font-semibold text-gray-900">{preparingCount}</p>
-      </div>
-      <div className="bg-white rounded-3xl border border-gray-200/50 p-5 shadow-sm">
-        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">
-          Ready
-        </p>
-        <p className="text-3xl font-semibold text-gray-900">{readyCount}</p>
-      </div>
-    </div>
-  );
-}
-
-function DashboardReportsSummary() {
-  const { orders } = useApp();
-  const totalRevenue = orders
-    .filter((o) => o.status !== "cancelled")
-    .reduce((s, o) => s + o.total, 0);
-  const completedOrders = orders.filter((o) => o.status === "completed").length;
-
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="bg-white rounded-3xl border border-gray-200/50 p-5 shadow-sm">
-        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">
-          Revenue
-        </p>
-        <p className="text-3xl font-semibold text-gray-900">
-          ₱{totalRevenue.toLocaleString()}
-        </p>
-      </div>
-      <div className="bg-white rounded-3xl border border-gray-200/50 p-5 shadow-sm">
-        <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">
-          Completed
-        </p>
-        <p className="text-3xl font-semibold text-gray-900">
-          {completedOrders}
-        </p>
-      </div>
+    <div className="bg-white rounded-3xl p-6 border border-gray-200/50 shadow-lg">
+      <p className="text-gray-800 mb-4">Recent Orders</p>
+      {recentOrders.length === 0 ? (
+        <div className="text-center py-8 text-gray-300 text-sm">
+          No orders yet
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-gray-400 border-b border-gray-50">
+                <th className="text-left pb-3 font-normal">Customer</th>
+                <th className="text-left pb-3 font-normal hidden sm:table-cell">
+                  Date
+                </th>
+                <th className="text-right pb-3 font-normal">Total</th>
+                <th className="text-right pb-3 font-normal">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {recentOrders.map((o) => (
+                <tr
+                  key={o.id || o.date}
+                  className="hover:bg-gray-50/50 transition-colors"
+                >
+                  <td className="py-3">{o.name}</td>
+                  <td className="py-3 text-gray-400 hidden sm:table-cell text-xs">
+                    {o.date}
+                  </td>
+                  <td className="py-3 text-right">₱{o.total}</td>
+                  <td className="py-3 text-right">
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${STATUS_CONFIG[o.status].badge}`}
+                    >
+                      {STATUS_CONFIG[o.status].label}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Dashboard Section ───────────────────────────────────────────────────────
 
-function DashboardSection() {
+function DashboardSection({
+  includeRecentOrders = true,
+}: {
+  includeRecentOrders?: boolean;
+}) {
   const { orders, products } = useApp();
 
   const chartData = useMemo(() => {
@@ -900,51 +882,7 @@ function DashboardSection() {
         </div>
       </div>
 
-      {/* Recent Orders */}
-      <div className="bg-white rounded-3xl p-6 border border-gray-200/50 shadow-lg">
-        <p className="text-gray-800 mb-4">Recent Orders</p>
-        {recentOrders.length === 0 ? (
-          <div className="text-center py-8 text-gray-300 text-sm">
-            No orders yet
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-gray-400 border-b border-gray-50">
-                  <th className="text-left pb-3 font-normal">Customer</th>
-                  <th className="text-left pb-3 font-normal hidden sm:table-cell">
-                    Date
-                  </th>
-                  <th className="text-right pb-3 font-normal">Total</th>
-                  <th className="text-right pb-3 font-normal">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {recentOrders.map((o) => (
-                  <tr
-                    key={o.id || o.date}
-                    className="hover:bg-gray-50/50 transition-colors"
-                  >
-                    <td className="py-3">{o.name}</td>
-                    <td className="py-3 text-gray-400 hidden sm:table-cell text-xs">
-                      {o.date}
-                    </td>
-                    <td className="py-3 text-right">₱{o.total}</td>
-                    <td className="py-3 text-right">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${STATUS_CONFIG[o.status].badge}`}
-                      >
-                        {STATUS_CONFIG[o.status].label}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {includeRecentOrders && <RecentOrdersPanel recentOrders={recentOrders} />}
     </div>
   );
 }
@@ -2316,7 +2254,11 @@ function UsersManagementSection() {
 
 // ─── Store Settings Section ──────────────────────────────────────────────────
 
-function StoreSettingsSection() {
+function StoreSettingsSection({
+  mobileView = "both",
+}: {
+  mobileView?: "both" | "main" | "info";
+}) {
   const {
     settings,
     updateSettings,
@@ -2366,399 +2308,407 @@ function StoreSettingsSection() {
         </p>
       </div>
 
-      {/* Hero Slides */}
-      <div className="bg-white rounded-3xl border border-gray-200/50 shadow-lg p-6">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <p className="text-gray-800">Hero Carousel Slides</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Edit or add slides shown on the customer homepage
-            </p>
+      {mobileView !== "info" && (
+        <div className="bg-white rounded-3xl border border-gray-200/50 shadow-lg p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <p className="text-gray-800">Hero Carousel Slides</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Edit or add slides shown on the customer homepage
+              </p>
+            </div>
+            <button
+              onClick={() => setAddingSlide(true)}
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-full text-sm hover:shadow-lg hover:scale-105 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              Add Slide
+            </button>
           </div>
-          <button
-            onClick={() => setAddingSlide(true)}
-            className="flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-full text-sm hover:shadow-lg hover:scale-105 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            Add Slide
-          </button>
-        </div>
 
-        <div className="space-y-4">
-          {settings.heroSlides.map((slide, idx) => (
-            <SlideEditor
-              key={slide.id}
-              slide={slide}
-              index={idx}
-              canDelete={settings.heroSlides.length > 1}
-              onUpdate={(updates) => updateHeroSlide(slide.id, updates)}
-              onDelete={() => removeHeroSlide(slide.id)}
-            />
-          ))}
+          <div className="space-y-4">
+            {settings.heroSlides.map((slide, idx) => (
+              <SlideEditor
+                key={slide.id}
+                slide={slide}
+                index={idx}
+                canDelete={settings.heroSlides.length > 1}
+                onUpdate={(updates) => updateHeroSlide(slide.id, updates)}
+                onDelete={() => removeHeroSlide(slide.id)}
+              />
+            ))}
 
-          {addingSlide && (
-            <div className="border border-dashed border-gray-300 rounded-2xl p-4 space-y-3">
-              <p className="text-sm text-gray-600">New Slide</p>
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  placeholder="Title"
-                  value={newSlide.title}
-                  onChange={(e) =>
-                    setNewSlide({ ...newSlide, title: e.target.value })
-                  }
-                  className="col-span-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
-                />
-                <input
-                  placeholder="Subtitle"
-                  value={newSlide.subtitle}
-                  onChange={(e) =>
-                    setNewSlide({ ...newSlide, subtitle: e.target.value })
-                  }
-                  className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
-                />
-                <input
-                  placeholder="Description"
-                  value={newSlide.description}
-                  onChange={(e) =>
-                    setNewSlide({ ...newSlide, description: e.target.value })
-                  }
-                  className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
-                />
-
-                {/* Image Upload */}
-                <div className="col-span-2 relative">
+            {addingSlide && (
+              <div className="border border-dashed border-gray-300 rounded-2xl p-4 space-y-3">
+                <p className="text-sm text-gray-600">New Slide</p>
+                <div className="grid grid-cols-2 gap-3">
                   <input
-                    type="file"
-                    id="new-slide-image"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        setNewImageFile(e.target.files[0]);
-                      }
-                    }}
+                    placeholder="Title"
+                    value={newSlide.title}
+                    onChange={(e) =>
+                      setNewSlide({ ...newSlide, title: e.target.value })
+                    }
+                    className="col-span-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
                   />
-                  <label
-                    htmlFor="new-slide-image"
-                    className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200 border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-colors"
-                  >
-                    <Upload className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-500 truncate">
-                      {newImageFile
-                        ? newImageFile.name
-                        : "Upload slide image..."}
-                    </span>
-                  </label>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setAddingSlide(false);
-                    setNewImageFile(null);
-                    setNewSlide({
-                      title: "",
-                      subtitle: "",
-                      description: "",
-                      image: "",
-                    });
-                  }}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-full text-sm hover:border-black hover:shadow-md transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  disabled={uploadingSlide}
-                  onClick={async () => {
-                    if (newSlide.title && (newSlide.image || newImageFile)) {
-                      setUploadingSlide(true);
-                      let finalImage = newSlide.image;
-                      if (newImageFile) {
-                        try {
-                          finalImage = await uploadProductImage(newImageFile);
-                        } catch (err) {
-                          console.error("Slide image upload failed:", err);
-                          alert("Image upload failed. Please try again.");
-                          setUploadingSlide(false);
-                          return;
+                  <input
+                    placeholder="Subtitle"
+                    value={newSlide.subtitle}
+                    onChange={(e) =>
+                      setNewSlide({ ...newSlide, subtitle: e.target.value })
+                    }
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
+                  />
+                  <input
+                    placeholder="Description"
+                    value={newSlide.description}
+                    onChange={(e) =>
+                      setNewSlide({ ...newSlide, description: e.target.value })
+                    }
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black"
+                  />
+
+                  {/* Image Upload */}
+                  <div className="col-span-2 relative">
+                    <input
+                      type="file"
+                      id="new-slide-image"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setNewImageFile(e.target.files[0]);
                         }
-                      }
-                      addHeroSlide({ ...newSlide, image: finalImage });
+                      }}
+                    />
+                    <label
+                      htmlFor="new-slide-image"
+                      className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200 border-dashed rounded-xl cursor-pointer hover:bg-gray-100 transition-colors"
+                    >
+                      <Upload className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-500 truncate">
+                        {newImageFile
+                          ? newImageFile.name
+                          : "Upload slide image..."}
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setAddingSlide(false);
+                      setNewImageFile(null);
                       setNewSlide({
                         title: "",
                         subtitle: "",
                         description: "",
                         image: "",
                       });
-                      setNewImageFile(null);
-                      setAddingSlide(false);
-                      setUploadingSlide(false);
-                    }
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-full text-sm hover:shadow-lg hover:scale-105 transition-all disabled:opacity-70 disabled:hover:scale-100"
-                >
-                  {uploadingSlide ? (
-                    <>
-                      <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                      Uploading...
-                    </>
-                  ) : (
-                    "Add Slide"
-                  )}
-                </button>
+                    }}
+                    className="flex-1 py-2.5 border border-gray-200 rounded-full text-sm hover:border-black hover:shadow-md transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={uploadingSlide}
+                    onClick={async () => {
+                      if (newSlide.title && (newSlide.image || newImageFile)) {
+                        setUploadingSlide(true);
+                        let finalImage = newSlide.image;
+                        if (newImageFile) {
+                          try {
+                            finalImage = await uploadProductImage(newImageFile);
+                          } catch (err) {
+                            console.error("Slide image upload failed:", err);
+                            alert("Image upload failed. Please try again.");
+                            setUploadingSlide(false);
+                            return;
+                          }
+                        }
+                        addHeroSlide({ ...newSlide, image: finalImage });
+                        setNewSlide({
+                          title: "",
+                          subtitle: "",
+                          description: "",
+                          image: "",
+                        });
+                        setNewImageFile(null);
+                        setAddingSlide(false);
+                        setUploadingSlide(false);
+                      }
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-br from-gray-900 to-black text-white rounded-full text-sm hover:shadow-lg hover:scale-105 transition-all disabled:opacity-70 disabled:hover:scale-100"
+                  >
+                    {uploadingSlide ? (
+                      <>
+                        <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                        Uploading...
+                      </>
+                    ) : (
+                      "Add Slide"
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Store Info */}
-      <div className="bg-white rounded-3xl border border-gray-200/50 shadow-lg p-6">
-        <p className="text-gray-800 mb-5">Store Information</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            {
-              label: "Store Name",
-              key: "storeName",
-              placeholder: "Fabella Coffee",
-            },
-            {
-              label: "Phone Number",
-              key: "phone",
-              placeholder: "+63 917 123 4567",
-            },
-            {
-              label: "Email Address",
-              key: "email",
-              placeholder: "hello@fabella.com",
-            },
-            { label: "Address", key: "address", placeholder: "Store address" },
-            {
-              label: "Weekday Hours",
-              key: "weekdayHours",
-              placeholder: "6am - 10pm",
-            },
-            {
-              label: "Weekend Hours",
-              key: "weekendHours",
-              placeholder: "7am - 11pm",
-            },
-            {
-              label: "Delivery Fee (₱)",
-              key: "deliveryFee",
-              placeholder: "49",
-            },
-            {
-              label: "GCash Number",
-              key: "gcashNumber",
-              placeholder: "+63 917 123 4567",
-            },
-            {
-              label: "GCash Account Name",
-              key: "gcashName",
-              placeholder: "Fabella Coffee",
-            },
-          ].map(({ label, key, placeholder }) => (
-            <div key={key}>
+      {mobileView !== "main" && (
+        <div className="bg-white rounded-3xl border border-gray-200/50 shadow-lg p-6">
+          <p className="text-gray-800 mb-5">Store Information</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              {
+                label: "Store Name",
+                key: "storeName",
+                placeholder: "Fabella Coffee",
+              },
+              {
+                label: "Phone Number",
+                key: "phone",
+                placeholder: "+63 917 123 4567",
+              },
+              {
+                label: "Email Address",
+                key: "email",
+                placeholder: "hello@fabella.com",
+              },
+              {
+                label: "Address",
+                key: "address",
+                placeholder: "Store address",
+              },
+              {
+                label: "Weekday Hours",
+                key: "weekdayHours",
+                placeholder: "6am - 10pm",
+              },
+              {
+                label: "Weekend Hours",
+                key: "weekendHours",
+                placeholder: "7am - 11pm",
+              },
+              {
+                label: "Delivery Fee (₱)",
+                key: "deliveryFee",
+                placeholder: "49",
+              },
+              {
+                label: "GCash Number",
+                key: "gcashNumber",
+                placeholder: "+63 917 123 4567",
+              },
+              {
+                label: "GCash Account Name",
+                key: "gcashName",
+                placeholder: "Fabella Coffee",
+              },
+            ].map(({ label, key, placeholder }) => (
+              <div key={key}>
+                <label className="text-xs text-gray-400 mb-1.5 block">
+                  {label}
+                </label>
+                <input
+                  type="text"
+                  placeholder={placeholder}
+                  value={(
+                    (info as unknown as Record<string, string | number>)[key] ??
+                    ""
+                  ).toString()}
+                  onChange={(e) => {
+                    const val =
+                      key === "deliveryFee"
+                        ? Number(e.target.value) || 0
+                        : e.target.value;
+                    setInfo({ ...info, [key]: val });
+                  }}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black transition-colors"
+                />
+              </div>
+            ))}
+
+            <div className="sm:col-span-2">
               <label className="text-xs text-gray-400 mb-1.5 block">
-                {label}
+                Announcement Banner (leave blank to hide)
               </label>
               <input
                 type="text"
-                placeholder={placeholder}
-                value={(
-                  (info as unknown as Record<string, string | number>)[key] ??
-                  ""
-                ).toString()}
-                onChange={(e) => {
-                  const val =
-                    key === "deliveryFee"
-                      ? Number(e.target.value) || 0
-                      : e.target.value;
-                  setInfo({ ...info, [key]: val });
-                }}
+                placeholder="e.g. Free delivery on orders over ₱500 today!"
+                value={info.announcement}
+                onChange={(e) =>
+                  setInfo({ ...info, announcement: e.target.value })
+                }
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black transition-colors"
               />
             </div>
-          ))}
 
-          <div className="sm:col-span-2">
-            <label className="text-xs text-gray-400 mb-1.5 block">
-              Announcement Banner (leave blank to hide)
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Free delivery on orders over ₱500 today!"
-              value={info.announcement}
-              onChange={(e) =>
-                setInfo({ ...info, announcement: e.target.value })
-              }
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-black transition-colors"
-            />
-          </div>
-
-          {/* GCash QR Code Image Uploader */}
-          <div className="sm:col-span-2 border-t border-gray-150 pt-5 mt-2 space-y-3">
-            <label className="text-sm font-medium text-gray-800 block">
-              GCash Payment QR Code
-            </label>
-            <div className="flex items-center gap-5">
-              {info.gcashQrCode ? (
-                <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-inner flex-shrink-0">
-                  <img
-                    src={info.gcashQrCode}
-                    alt="GCash QR Code"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
-                  No QR Code
-                </div>
-              )}
-              <div className="space-y-1.5">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    setUploadingQr(true);
-                    try {
-                      const url = await uploadProductImage(file);
-                      setInfo((prev) => ({ ...prev, gcashQrCode: url }));
-                      alert("GCash QR Code uploaded successfully!");
-                    } catch (err) {
-                      console.error("GCash QR Code upload failed:", err);
-                      alert("Failed to upload GCash QR Code.");
-                    } finally {
-                      setUploadingQr(false);
-                    }
-                  }}
-                  className="hidden"
-                  id="gcash-qr-upload"
-                  disabled={uploadingQr}
-                />
-                <div className="flex gap-2">
-                  <label
-                    htmlFor="gcash-qr-upload"
-                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 hover:border-black rounded-full text-xs font-medium transition-all"
-                  >
-                    {uploadingQr ? "Uploading..." : "Upload QR Image"}
-                  </label>
-                  {info.gcashQrCode && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setInfo((prev) => ({ ...prev, gcashQrCode: "" }))
+            {/* GCash QR Code Image Uploader */}
+            <div className="sm:col-span-2 border-t border-gray-150 pt-5 mt-2 space-y-3">
+              <label className="text-sm font-medium text-gray-800 block">
+                GCash Payment QR Code
+              </label>
+              <div className="flex items-center gap-5">
+                {info.gcashQrCode ? (
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-inner flex-shrink-0">
+                    <img
+                      src={info.gcashQrCode}
+                      alt="GCash QR Code"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
+                    No QR Code
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingQr(true);
+                      try {
+                        const url = await uploadProductImage(file);
+                        setInfo((prev) => ({ ...prev, gcashQrCode: url }));
+                        alert("GCash QR Code uploaded successfully!");
+                      } catch (err) {
+                        console.error("GCash QR Code upload failed:", err);
+                        alert("Failed to upload GCash QR Code.");
+                      } finally {
+                        setUploadingQr(false);
                       }
-                      className="px-4 py-2 border border-red-200 hover:border-red-500 text-red-500 hover:bg-red-50 rounded-full text-xs font-medium transition-all"
+                    }}
+                    className="hidden"
+                    id="gcash-qr-upload"
+                    disabled={uploadingQr}
+                  />
+                  <div className="flex gap-2">
+                    <label
+                      htmlFor="gcash-qr-upload"
+                      className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 hover:border-black rounded-full text-xs font-medium transition-all"
                     >
-                      Remove
-                    </button>
-                  )}
+                      {uploadingQr ? "Uploading..." : "Upload QR Image"}
+                    </label>
+                    {info.gcashQrCode && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setInfo((prev) => ({ ...prev, gcashQrCode: "" }))
+                        }
+                        className="px-4 py-2 border border-red-200 hover:border-red-500 text-red-500 hover:bg-red-50 rounded-full text-xs font-medium transition-all"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Supported formats: JPG, PNG, WebP. Max 5MB.
+                  </p>
                 </div>
-                <p className="text-xs text-gray-400">
-                  Supported formats: JPG, PNG, WebP. Max 5MB.
-                </p>
               </div>
             </div>
-          </div>
 
-          {/* Custom Notification Sound Uploader */}
-          <div className="sm:col-span-2 border-t border-gray-150 pt-5 mt-2 space-y-3">
-            <label className="text-sm font-medium text-gray-800 block">
-              Custom Order Notification Sound
-            </label>
-            <div className="flex items-center gap-5">
-              {info.notificationSoundUrl ? (
-                <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-2xl flex-shrink-0">
-                  <audio
-                    src={info.notificationSoundUrl}
-                    controls
-                    className="h-8 max-w-[200px]"
-                  />
-                </div>
-              ) : (
-                <div className="px-4 py-3 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
-                  Default Crystal Bells
-                </div>
-              )}
-              <div className="space-y-1.5 flex-1 min-w-0">
-                <input
-                  type="file"
-                  accept="audio/mp3,audio/wav,audio/mpeg"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    setUploadingSound(true);
-                    try {
-                      const url = await uploadAssetFile(file, "sounds");
-                      setInfo((prev) => ({
-                        ...prev,
-                        notificationSoundUrl: url,
-                      }));
-                      alert("Custom notification sound uploaded successfully!");
-                    } catch (err) {
-                      console.error("Notification sound upload failed:", err);
-                      alert("Failed to upload custom sound.");
-                    } finally {
-                      setUploadingSound(false);
-                    }
-                  }}
-                  className="hidden"
-                  id="notif-sound-upload"
-                  disabled={uploadingSound}
-                />
-                <div className="flex gap-2">
-                  <label
-                    htmlFor="notif-sound-upload"
-                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 hover:border-black rounded-full text-xs font-medium transition-all"
-                  >
-                    {uploadingSound ? "Uploading..." : "Upload MP3 / WAV"}
-                  </label>
-                  {info.notificationSoundUrl && (
-                    <button
-                      type="button"
-                      onClick={() =>
+            {/* Custom Notification Sound Uploader */}
+            <div className="sm:col-span-2 border-t border-gray-150 pt-5 mt-2 space-y-3">
+              <label className="text-sm font-medium text-gray-800 block">
+                Custom Order Notification Sound
+              </label>
+              <div className="flex items-center gap-5">
+                {info.notificationSoundUrl ? (
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-2xl flex-shrink-0">
+                    <audio
+                      src={info.notificationSoundUrl}
+                      controls
+                      className="h-8 max-w-[200px]"
+                    />
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
+                    Default Crystal Bells
+                  </div>
+                )}
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <input
+                    type="file"
+                    accept="audio/mp3,audio/wav,audio/mpeg"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingSound(true);
+                      try {
+                        const url = await uploadAssetFile(file, "sounds");
                         setInfo((prev) => ({
                           ...prev,
-                          notificationSoundUrl: "",
-                        }))
+                          notificationSoundUrl: url,
+                        }));
+                        alert(
+                          "Custom notification sound uploaded successfully!",
+                        );
+                      } catch (err) {
+                        console.error("Notification sound upload failed:", err);
+                        alert("Failed to upload custom sound.");
+                      } finally {
+                        setUploadingSound(false);
                       }
-                      className="px-4 py-2 border border-red-200 hover:border-red-500 text-red-500 hover:bg-red-50 rounded-full text-xs font-medium transition-all"
+                    }}
+                    className="hidden"
+                    id="notif-sound-upload"
+                    disabled={uploadingSound}
+                  />
+                  <div className="flex gap-2">
+                    <label
+                      htmlFor="notif-sound-upload"
+                      className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 hover:border-black rounded-full text-xs font-medium transition-all"
                     >
-                      Reset to Default
-                    </button>
-                  )}
+                      {uploadingSound ? "Uploading..." : "Upload MP3 / WAV"}
+                    </label>
+                    {info.notificationSoundUrl && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setInfo((prev) => ({
+                            ...prev,
+                            notificationSoundUrl: "",
+                          }))
+                        }
+                        className="px-4 py-2 border border-red-200 hover:border-red-500 text-red-500 hover:bg-red-50 rounded-full text-xs font-medium transition-all"
+                      >
+                        Reset to Default
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Upload a short sound file (.mp3, .wav) to play when new
+                    orders arrive. Max 5MB.
+                  </p>
                 </div>
-                <p className="text-xs text-gray-400">
-                  Upload a short sound file (.mp3, .wav) to play when new orders
-                  arrive. Max 5MB.
-                </p>
               </div>
             </div>
           </div>
-        </div>
 
-        <button
-          onClick={handleSaveInfo}
-          className={`mt-6 flex items-center gap-2 px-8 py-3 rounded-full text-sm transition-all shadow-lg ${
-            saved
-              ? "bg-gradient-to-br from-green-600 to-emerald-600 text-white scale-105"
-              : "bg-gradient-to-br from-gray-900 to-black text-white hover:shadow-xl hover:scale-105"
-          }`}
-        >
-          {saved ? (
-            <>
-              <Check className="w-4 h-4" />
-              Saved!
-            </>
-          ) : (
-            <>Save Changes</>
-          )}
-        </button>
-      </div>
+          <button
+            onClick={handleSaveInfo}
+            className={`mt-6 flex items-center gap-2 px-8 py-3 rounded-full text-sm transition-all shadow-lg ${
+              saved
+                ? "bg-gradient-to-br from-green-600 to-emerald-600 text-white scale-105"
+                : "bg-gradient-to-br from-gray-900 to-black text-white hover:shadow-xl hover:scale-105"
+            }`}
+          >
+            {saved ? (
+              <>
+                <Check className="w-4 h-4" />
+                Saved!
+              </>
+            ) : (
+              <>Save Changes</>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -2934,33 +2884,33 @@ export function AdminPage() {
     latestNotification,
     clearUnreadOrders,
     clearLatestNotification,
+    orders,
   } = useApp();
   const [section, setSection] = useState<AdminSection>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [adminSubTab, setAdminSubTab] = useState<AdminSubTab>("overview");
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   useEffect(() => {
     switch (section) {
       case "dashboard":
         setAdminSubTab("overview");
         break;
-      case "menu":
-        setAdminSubTab("products");
-        break;
-      case "transactions":
-        setAdminSubTab("activity");
-        break;
-      case "users":
-        setAdminSubTab("roles");
-        break;
       case "settings":
-        setAdminSubTab("info");
+        setAdminSubTab("main");
         break;
       default:
         setAdminSubTab("overview");
         break;
     }
   }, [section]);
+
+  useEffect(() => {
+    const updateViewport = () => setIsMobileViewport(window.innerWidth < 1024);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
 
   // Auto-dismiss toast
   useEffect(() => {
@@ -3168,25 +3118,30 @@ export function AdminPage() {
                   <div>
                     <h2 className="text-xl mb-1">Dashboard</h2>
                     <p className="text-sm text-gray-400">
-                      Quick views for activity, queue, and reports
+                      Quick views for activity and recent orders
                     </p>
                   </div>
                 </div>
-                <SectionTabs
-                  items={[
-                    { key: "overview", label: "Overview" },
-                    { key: "queue", label: "Queue" },
-                    { key: "reports", label: "Reports" },
-                  ]}
-                  active={adminSubTab}
-                  onChange={setAdminSubTab}
-                />
-                {adminSubTab === "overview" ? (
-                  <DashboardSection />
-                ) : adminSubTab === "queue" ? (
-                  <DashboardQueueSummary />
+                <div className="lg:hidden">
+                  <SectionTabs
+                    items={[
+                      { key: "overview", label: "Overview" },
+                      { key: "recent", label: "Recent Orders" },
+                    ]}
+                    active={adminSubTab}
+                    onChange={setAdminSubTab}
+                  />
+                </div>
+                {isMobileViewport &&
+                adminSubTab === "recent" &&
+                orders.length > 0 ? (
+                  <RecentOrdersPanel recentOrders={orders.slice(0, 5)} />
                 ) : (
-                  <DashboardReportsSummary />
+                  <DashboardSection
+                    includeRecentOrders={
+                      !isMobileViewport || adminSubTab === "overview"
+                    }
+                  />
                 )}
               </div>
             )}
@@ -3207,7 +3162,25 @@ export function AdminPage() {
             )}
             {section === "settings" && (
               <div className="space-y-6">
-                <StoreSettingsSection />
+                <div className="lg:hidden">
+                  <SectionTabs
+                    items={[
+                      { key: "main", label: "Main" },
+                      { key: "info", label: "Store Info" },
+                    ]}
+                    active={adminSubTab}
+                    onChange={setAdminSubTab}
+                  />
+                </div>
+                <StoreSettingsSection
+                  mobileView={
+                    isMobileViewport
+                      ? adminSubTab === "info"
+                        ? "info"
+                        : "main"
+                      : "both"
+                  }
+                />
               </div>
             )}
             {section === "manual" && <AdminSystemManual />}

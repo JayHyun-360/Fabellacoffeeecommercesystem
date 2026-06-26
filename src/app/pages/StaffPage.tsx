@@ -44,6 +44,7 @@ import type { SavedOrder } from "../components/OrderHistory";
 import logoImg from "../../imports/682349994_793900143580024_743914547050463231_n.png";
 
 type StaffSection = "dashboard" | "manual" | "privacy";
+type StaffSubTab = "overview" | "queue";
 type StatusFilter =
   | "all"
   | "pending"
@@ -581,11 +582,26 @@ export function StaffPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [staffSubTab, setStaffSubTab] = useState<StaffSubTab>("overview");
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 30000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const updateViewport = () => setIsMobileViewport(window.innerWidth < 1024);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (section === "dashboard") {
+      setStaffSubTab("overview");
+    }
+  }, [section]);
 
   // Auto-dismiss toast
   useEffect(() => {
@@ -630,7 +646,9 @@ export function StaffPage() {
   ];
 
   // Dashboard specific view logic
-  const renderDashboard = () => {
+  const renderDashboard = (view: "full" | "overview" | "queue" = "full") => {
+    const showOverview = view !== "queue";
+    const showQueue = view !== "overview";
     const todayStr = currentTime.toDateString();
     const todayOrders = orders.filter((o) => {
       try {
@@ -678,231 +696,241 @@ export function StaffPage() {
 
     return (
       <div className="space-y-8 sm:space-y-10">
-        {/* Banner Welcome Message */}
-        <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-black rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-8 lg:p-10 text-white relative overflow-hidden shadow-xl shadow-gray-900/10">
-          <div className="absolute right-0 bottom-0 opacity-10 translate-x-12 translate-y-12 select-none pointer-events-none">
-            <Coffee className="w-64 h-64 sm:w-96 sm:h-96" />
-          </div>
-          <div className="relative z-10 space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/20">
-              <Sparkles className="w-3 h-3 text-amber-400" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300">
-                Store operations ready
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-white">
-              Hello,{" "}
-              <span className="font-light">
-                {user?.user_metadata?.full_name?.split(" ")[0] ?? "Operator"}
-              </span>
-            </h1>
-            <p className="text-gray-400 text-sm max-w-xl leading-relaxed hidden sm:block">
-              Track real-time orders, coordinate dine-in &amp; delivery
-              logistics, and mark items completed.
-            </p>
-          </div>
-        </div>
-
-        {/* Operational Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
-          {[
-            {
-              label: "Pending",
-              value: String(pendingCount),
-              gradient: "from-amber-500/5 to-amber-500/10",
-              border: "border-amber-200/50",
-              color: "text-amber-700",
-              icon: <Clock className="w-5 h-5 text-amber-600" />,
-            },
-            {
-              label: "Preparing",
-              value: String(preparingCount),
-              gradient: "from-blue-500/5 to-blue-500/10",
-              border: "border-blue-200/50",
-              color: "text-blue-700",
-              icon: <Coffee className="w-5 h-5 text-blue-600" />,
-            },
-            {
-              label: "Ready",
-              value: String(readyCount),
-              gradient: "from-purple-500/5 to-purple-500/10",
-              border: "border-purple-200/50",
-              color: "text-purple-700",
-              icon: <CheckCircle className="w-5 h-5 text-purple-600" />,
-            },
-            {
-              label: "Done Today",
-              value: String(completedToday),
-              gradient: "from-emerald-500/5 to-emerald-500/10",
-              border: "border-emerald-200/50",
-              color: "text-emerald-700",
-              icon: <CheckCircle className="w-5 h-5 text-emerald-600" />,
-            },
-            {
-              label: "Revenue",
-              value: `₱${todayRevenue.toLocaleString()}`,
-              gradient: "from-white to-gray-50",
-              border: "border-gray-200/60",
-              color: "text-gray-900",
-              icon: <TrendingUp className="w-5 h-5 text-gray-500" />,
-            },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className={`bg-gradient-to-br ${s.gradient} border ${s.border} rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row justify-between items-start gap-3 group`}
-            >
-              <div className="space-y-1.5 min-w-0 flex-1 pr-2">
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider leading-none">
-                  {s.label}
-                </p>
-                <p
-                  className={`text-2xl lg:text-3xl font-semibold tracking-tight truncate ${s.color}`}
-                >
-                  {s.value}
-                </p>
+        {showOverview && (
+          <>
+            {/* Banner Welcome Message */}
+            <div className="bg-gradient-to-br from-gray-900 via-gray-900 to-black rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-8 lg:p-10 text-white relative overflow-hidden shadow-xl shadow-gray-900/10">
+              <div className="absolute right-0 bottom-0 opacity-10 translate-x-12 translate-y-12 select-none pointer-events-none">
+                <Coffee className="w-64 h-64 sm:w-96 sm:h-96" />
               </div>
-              <div className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 group-hover:scale-110 transition-transform flex-shrink-0">
-                {s.icon}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Filter Navigation Tabs and Legends */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 border-b border-gray-100 pb-6 relative z-10">
-          {/* Mobile Filter Dropdown */}
-          <div className="md:hidden relative">
-            <button
-              onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
-              className="w-full flex items-center justify-between bg-white border border-gray-200 px-5 py-3.5 rounded-2xl text-sm font-semibold text-gray-800 shadow-sm"
-            >
-              <div className="flex items-center gap-2">
-                <span>Filter Queue:</span>
-                <span className="text-black">
-                  {tabs.find((t) => t.key === statusFilter)?.label}
-                </span>
-                {tabs.find((t) => t.key === statusFilter)?.count !==
-                  undefined && (
-                  <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200">
-                    {tabs.find((t) => t.key === statusFilter)?.count}
+              <div className="relative z-10 space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/20">
+                  <Sparkles className="w-3 h-3 text-amber-400" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300">
+                    Store operations ready
                   </span>
-                )}
+                </div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-white">
+                  Hello,{" "}
+                  <span className="font-light">
+                    {user?.user_metadata?.full_name?.split(" ")[0] ??
+                      "Operator"}
+                  </span>
+                </h1>
+                <p className="text-gray-400 text-sm max-w-xl leading-relaxed hidden sm:block">
+                  Track real-time orders, coordinate dine-in &amp; delivery
+                  logistics, and mark items completed.
+                </p>
               </div>
-              <ChevronDown
-                className={`w-4 h-4 text-gray-500 transition-transform ${filterDropdownOpen ? "rotate-180" : ""}`}
-              />
-            </button>
+            </div>
 
-            {filterDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => {
-                      setStatusFilter(tab.key);
-                      setFilterDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-5 py-4 text-sm font-semibold transition-colors border-b border-gray-50 last:border-b-0 ${
-                      statusFilter === tab.key
-                        ? "bg-gray-50/80 text-black"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {statusFilter === tab.key && (
-                        <Check className="w-4 h-4 text-blue-500" />
+            {/* Operational Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
+              {[
+                {
+                  label: "Pending",
+                  value: String(pendingCount),
+                  gradient: "from-amber-500/5 to-amber-500/10",
+                  border: "border-amber-200/50",
+                  color: "text-amber-700",
+                  icon: <Clock className="w-5 h-5 text-amber-600" />,
+                },
+                {
+                  label: "Preparing",
+                  value: String(preparingCount),
+                  gradient: "from-blue-500/5 to-blue-500/10",
+                  border: "border-blue-200/50",
+                  color: "text-blue-700",
+                  icon: <Coffee className="w-5 h-5 text-blue-600" />,
+                },
+                {
+                  label: "Ready",
+                  value: String(readyCount),
+                  gradient: "from-purple-500/5 to-purple-500/10",
+                  border: "border-purple-200/50",
+                  color: "text-purple-700",
+                  icon: <CheckCircle className="w-5 h-5 text-purple-600" />,
+                },
+                {
+                  label: "Done Today",
+                  value: String(completedToday),
+                  gradient: "from-emerald-500/5 to-emerald-500/10",
+                  border: "border-emerald-200/50",
+                  color: "text-emerald-700",
+                  icon: <CheckCircle className="w-5 h-5 text-emerald-600" />,
+                },
+                {
+                  label: "Revenue",
+                  value: `₱${todayRevenue.toLocaleString()}`,
+                  gradient: "from-white to-gray-50",
+                  border: "border-gray-200/60",
+                  color: "text-gray-900",
+                  icon: <TrendingUp className="w-5 h-5 text-gray-500" />,
+                },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  className={`bg-gradient-to-br ${s.gradient} border ${s.border} rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row justify-between items-start gap-3 group`}
+                >
+                  <div className="space-y-1.5 min-w-0 flex-1 pr-2">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider leading-none">
+                      {s.label}
+                    </p>
+                    <p
+                      className={`text-2xl lg:text-3xl font-semibold tracking-tight truncate ${s.color}`}
+                    >
+                      {s.value}
+                    </p>
+                  </div>
+                  <div className="p-2 bg-white rounded-xl shadow-sm border border-gray-100 group-hover:scale-110 transition-transform flex-shrink-0">
+                    {s.icon}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {showQueue && (
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 border-b border-gray-100 pb-6 relative z-10">
+            {/* Mobile Filter Dropdown */}
+            <div className="md:hidden relative">
+              <button
+                onClick={() => setFilterDropdownOpen(!filterDropdownOpen)}
+                className="w-full flex items-center justify-between bg-white border border-gray-200 px-5 py-3.5 rounded-2xl text-sm font-semibold text-gray-800 shadow-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <span>Filter Queue:</span>
+                  <span className="text-black">
+                    {tabs.find((t) => t.key === statusFilter)?.label}
+                  </span>
+                  {tabs.find((t) => t.key === statusFilter)?.count !==
+                    undefined && (
+                    <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200">
+                      {tabs.find((t) => t.key === statusFilter)?.count}
+                    </span>
+                  )}
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-500 transition-transform ${filterDropdownOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {filterDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => {
+                        setStatusFilter(tab.key);
+                        setFilterDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-5 py-4 text-sm font-semibold transition-colors border-b border-gray-50 last:border-b-0 ${
+                        statusFilter === tab.key
+                          ? "bg-gray-50/80 text-black"
+                          : "text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {statusFilter === tab.key && (
+                          <Check className="w-4 h-4 text-blue-500" />
+                        )}
+                        <span
+                          className={statusFilter === tab.key ? "ml-0" : "ml-6"}
+                        >
+                          {tab.label}
+                        </span>
+                      </div>
+                      {tab.count !== undefined && (
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            statusFilter === tab.key
+                              ? "bg-white border border-gray-200 text-gray-800 shadow-sm"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
                       )}
-                      <span
-                        className={statusFilter === tab.key ? "ml-0" : "ml-6"}
-                      >
-                        {tab.label}
-                      </span>
-                    </div>
-                    {tab.count !== undefined && (
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          statusFilter === tab.key
-                            ? "bg-white border border-gray-200 text-gray-800 shadow-sm"
-                            : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {tab.count}
-                      </span>
-                    )}
-                  </button>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Filter Tabs */}
+            <div className="hidden md:flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setStatusFilter(tab.key)}
+                  className={`flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-all shadow-sm ${
+                    statusFilter === tab.key
+                      ? "bg-black text-white shadow-lg shadow-black/20 scale-[1.03]"
+                      : "bg-white border border-gray-200 hover:border-black text-gray-600 hover:text-black"
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  {tab.count !== undefined && (
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        statusFilter === tab.key
+                          ? "bg-white/20 text-white"
+                          : "bg-gray-100 text-gray-600 border border-gray-200"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Dining Legend (Desktop only) */}
+            <div className="hidden lg:flex gap-2.5 flex-wrap">
+              {Object.entries(ORDER_TYPE_CONFIG).map(([key, cfg]) => (
+                <span
+                  key={key}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text} border ${cfg.border} shadow-sm`}
+                >
+                  {cfg.icon}
+                  <span>{cfg.label}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {showQueue && (
+          <>
+            {/* Order Cards Grid */}
+            {sorted.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-32 text-center bg-white rounded-[2.5rem] border border-gray-100 shadow-sm">
+                <div className="w-24 h-24 rounded-3xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-6 shadow-sm">
+                  <RefreshCw
+                    className="w-10 h-10 text-gray-300 animate-spin"
+                    style={{ animationDuration: "6s" }}
+                  />
+                </div>
+                <p className="text-gray-800 text-xl font-semibold">
+                  Queue is clear
+                </p>
+                <p className="text-sm text-gray-400 mt-2 max-w-sm">
+                  {statusFilter === "all"
+                    ? "No customer orders have been recorded today. Fresh orders will display here automatically."
+                    : `No ${statusFilter} orders are currently present in your operations queue.`}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-start">
+                {sorted.map((order) => (
+                  <div key={order.id || order.date} className="self-start">
+                    <StaffOrderCard order={order} />
+                  </div>
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Desktop Filter Tabs */}
-          <div className="hidden md:flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setStatusFilter(tab.key)}
-                className={`flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-all shadow-sm ${
-                  statusFilter === tab.key
-                    ? "bg-black text-white shadow-lg shadow-black/20 scale-[1.03]"
-                    : "bg-white border border-gray-200 hover:border-black text-gray-600 hover:text-black"
-                }`}
-              >
-                <span>{tab.label}</span>
-                {tab.count !== undefined && (
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      statusFilter === tab.key
-                        ? "bg-white/20 text-white"
-                        : "bg-gray-100 text-gray-600 border border-gray-200"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Dining Legend (Desktop only) */}
-          <div className="hidden lg:flex gap-2.5 flex-wrap">
-            {Object.entries(ORDER_TYPE_CONFIG).map(([key, cfg]) => (
-              <span
-                key={key}
-                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text} border ${cfg.border} shadow-sm`}
-              >
-                {cfg.icon}
-                <span>{cfg.label}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Order Cards Grid */}
-        {sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-32 text-center bg-white rounded-[2.5rem] border border-gray-100 shadow-sm">
-            <div className="w-24 h-24 rounded-3xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-6 shadow-sm">
-              <RefreshCw
-                className="w-10 h-10 text-gray-300 animate-spin"
-                style={{ animationDuration: "6s" }}
-              />
-            </div>
-            <p className="text-gray-800 text-xl font-semibold">
-              Queue is clear
-            </p>
-            <p className="text-sm text-gray-400 mt-2 max-w-sm">
-              {statusFilter === "all"
-                ? "No customer orders have been recorded today. Fresh orders will display here automatically."
-                : `No ${statusFilter} orders are currently present in your operations queue.`}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-start">
-            {sorted.map((order) => (
-              <div key={order.id || order.date} className="self-start">
-                <StaffOrderCard order={order} />
-              </div>
-            ))}
-          </div>
+          </>
         )}
       </div>
     );
@@ -1065,7 +1093,40 @@ export function StaffPage() {
               </div>
             </div>
 
-            {section === "dashboard" && renderDashboard()}
+            {section === "dashboard" && (
+              <>
+                <div className="lg:hidden mb-4">
+                  <div className="flex gap-2">
+                    {(
+                      [
+                        { key: "overview", label: "Overview" },
+                        { key: "queue", label: "Queue" },
+                      ] as { key: StaffSubTab; label: string }[]
+                    ).map((item) => {
+                      const isActive = staffSubTab === item.key;
+                      return (
+                        <button
+                          key={item.key}
+                          onClick={() => setStaffSubTab(item.key)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                            isActive
+                              ? "bg-gray-900 text-white shadow-sm"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {isMobileViewport
+                  ? renderDashboard(
+                      staffSubTab === "queue" ? "queue" : "overview",
+                    )
+                  : renderDashboard("full")}
+              </>
+            )}
             {section === "manual" && (
               <div className="pt-2">
                 <StaffGuideSection />
