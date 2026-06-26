@@ -896,9 +896,11 @@ export function StaffPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-start">
             {sorted.map((order) => (
-              <StaffOrderCard key={order.id || order.date} order={order} />
+              <div key={order.id || order.date} className="self-start">
+                <StaffOrderCard order={order} />
+              </div>
             ))}
           </div>
         )}
@@ -1076,32 +1078,6 @@ export function StaffPage() {
             )}
           </div>
         </main>
-
-        {/* Bottom nav (mobile) */}
-        <nav className="lg:hidden bg-white border-t border-gray-100 flex flex-shrink-0 relative z-40">
-          {navItems.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => {
-                setSection(item.key);
-                if (item.key === "dashboard") clearUnreadOrders();
-              }}
-              className={`flex-1 flex flex-col items-center py-3 gap-0.5 text-xs transition-colors relative ${
-                section === item.key
-                  ? "text-black"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              {item.key === "dashboard" && unreadOrderCount > 0 && (
-                <span className="absolute top-2 right-1/4 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white animate-pulse" />
-              )}
-              {item.icon}
-              <span className="hidden sm:block">
-                {item.label.split(" ")[0]}
-              </span>
-            </button>
-          ))}
-        </nav>
       </div>
 
       {/* Global Toast Notification */}

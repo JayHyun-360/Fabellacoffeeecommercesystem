@@ -705,6 +705,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ? `${order.address}, ${order.city || ""}`
             : undefined,
           notes: order.notes,
+          notes_data: {
+            customer: order.notes ?? null,
+            staff: null,
+            delivery: null,
+            internal: null,
+          },
           items: order.items.map((item) => {
             const isValidUUID =
               /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(

@@ -1,8 +1,25 @@
-import { useState, useEffect } from 'react';
-import { X, ChevronRight, ChevronLeft, MapPin, Phone, Mail, User, Check, Package, Truck, Smartphone, Banknote, Store, UtensilsCrossed, ShoppingBag, LogIn } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useApp } from '../context/AppContext';
-import type { SavedOrder } from './OrderHistory';
+import { useState, useEffect } from "react";
+import {
+  X,
+  ChevronRight,
+  ChevronLeft,
+  MapPin,
+  Phone,
+  Mail,
+  User,
+  Check,
+  Package,
+  Truck,
+  Smartphone,
+  Banknote,
+  Store,
+  UtensilsCrossed,
+  ShoppingBag,
+  LogIn,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useApp } from "../context/AppContext";
+import type { SavedOrder } from "./OrderHistory";
 
 interface CartItem {
   id: string;
@@ -19,8 +36,8 @@ interface CheckoutProps {
   onOrderComplete: (order: SavedOrder) => void;
 }
 
-type DeliveryType = 'delivery' | 'pickup' | 'dine-in' | 'takeout';
-type PaymentMethod = 'cod' | 'gcash';
+type DeliveryType = "delivery" | "pickup" | "dine-in" | "takeout";
+type PaymentMethod = "cod" | "gcash";
 
 interface OrderDetails {
   name: string;
@@ -33,20 +50,45 @@ interface OrderDetails {
   paymentMethod: PaymentMethod;
 }
 
-const STEPS = ['Review Order', 'Order Details', 'Payment', 'Confirmation'];
+const STEPS = ["Review Order", "Order Details", "Payment", "Confirmation"];
 
-const DELIVERY_OPTIONS: { value: DeliveryType; label: string; icon: React.ReactNode; desc: string }[] = [
-  { value: 'dine-in', label: 'Dine In', icon: <UtensilsCrossed className="w-4 h-4" />, desc: 'Eat at our store' },
-  { value: 'takeout', label: 'Takeout', icon: <ShoppingBag className="w-4 h-4" />, desc: 'Order & take away' },
-  { value: 'delivery', label: 'Delivery', icon: <Truck className="w-4 h-4" />, desc: 'Delivered to your door' },
-  { value: 'pickup', label: 'Pick Up', icon: <Store className="w-4 h-4" />, desc: 'Ready at the counter' },
+const DELIVERY_OPTIONS: {
+  value: DeliveryType;
+  label: string;
+  icon: React.ReactNode;
+  desc: string;
+}[] = [
+  {
+    value: "dine-in",
+    label: "Dine In",
+    icon: <UtensilsCrossed className="w-4 h-4" />,
+    desc: "Eat at our store",
+  },
+  {
+    value: "takeout",
+    label: "Takeout",
+    icon: <ShoppingBag className="w-4 h-4" />,
+    desc: "Order & take away",
+  },
+  {
+    value: "delivery",
+    label: "Delivery",
+    icon: <Truck className="w-4 h-4" />,
+    desc: "Delivered to your door",
+  },
+  {
+    value: "pickup",
+    label: "Pick Up",
+    icon: <Store className="w-4 h-4" />,
+    desc: "Ready at the counter",
+  },
 ];
 
 const DELIVERY_TYPE_LABELS: Record<DeliveryType, string> = {
-  'dine-in': 'Dine In',
-  'takeout': 'Takeout',
-  'delivery': 'Delivery',
-  'pickup': 'Store Pick Up',
+  "dine-in": "Dine In",
+  takeout: "Takeout",
+  delivery: "Delivery",
+  pickup: "Store Pick Up",
 };
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
@@ -58,17 +100,17 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-xs transition-all duration-300 ${
                 index < currentStep
-                  ? 'bg-black text-white'
+                  ? "bg-black text-white"
                   : index === currentStep
-                  ? 'bg-black text-white ring-4 ring-black/20'
-                  : 'bg-gray-100 text-gray-400'
+                    ? "bg-black text-white ring-4 ring-black/20"
+                    : "bg-gray-100 text-gray-400"
               }`}
             >
               {index < currentStep ? <Check className="w-4 h-4" /> : index + 1}
             </div>
             <span
               className={`text-xs mt-1 whitespace-nowrap hidden sm:block transition-colors ${
-                index <= currentStep ? 'text-black' : 'text-gray-400'
+                index <= currentStep ? "text-black" : "text-gray-400"
               }`}
             >
               {step}
@@ -77,7 +119,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
           {index < STEPS.length - 1 && (
             <div
               className={`w-10 sm:w-16 h-px mx-1 mb-4 sm:mb-5 transition-colors duration-300 ${
-                index < currentStep ? 'bg-black' : 'bg-gray-200'
+                index < currentStep ? "bg-black" : "bg-gray-200"
               }`}
             />
           )}
@@ -87,25 +129,41 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
   );
 }
 
-function OrderReview({ items, deliveryType, onNext, onBack }: {
+function OrderReview({
+  items,
+  deliveryType,
+  onNext,
+  onBack,
+}: {
   items: CartItem[];
   deliveryType: DeliveryType;
   onNext: () => void;
   onBack: () => void;
 }) {
   const { settings } = useApp();
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = deliveryType === 'delivery' ? (settings.deliveryFee ?? 49) : 0;
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
+  const deliveryFee =
+    deliveryType === "delivery" ? (settings.deliveryFee ?? 49) : 0;
   const total = subtotal + deliveryFee;
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto space-y-3">
         {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl">
+          <div
+            key={item.id}
+            className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl"
+          >
             <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
               {item.image ? (
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400">
                   <Package className="w-6 h-6" />
@@ -129,9 +187,11 @@ function OrderReview({ items, deliveryType, onNext, onBack }: {
         <div className="flex justify-between text-sm text-gray-600">
           <span>Delivery Fee</span>
           <span>
-            {deliveryType !== 'delivery'
-              ? <span className="text-green-600">Free</span>
-              : `₱${settings.deliveryFee ?? 49}`}
+            {deliveryType !== "delivery" ? (
+              <span className="text-green-600">Free</span>
+            ) : (
+              `₱${settings.deliveryFee ?? 49}`
+            )}
           </span>
         </div>
         <div className="flex justify-between text-lg border-t border-gray-100 pt-3">
@@ -160,46 +220,62 @@ function OrderReview({ items, deliveryType, onNext, onBack }: {
   );
 }
 
-function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
+function DeliveryDetails({
+  details,
+  onChange,
+  onNext,
+  onBack,
+  isAnonymous,
+}: {
   details: OrderDetails;
   onChange: (field: keyof OrderDetails, value: string) => void;
   onNext: () => void;
   onBack: () => void;
   isAnonymous: boolean;
 }) {
-  const needsAddress = details.deliveryType === 'delivery';
-  const needsPhone = details.deliveryType === 'delivery' && !isAnonymous;
-  const needsEmail = !isAnonymous;
+  const requiresDeliveryDetails = details.deliveryType === "delivery";
+  const needsPhone = requiresDeliveryDetails;
+  const needsEmail = requiresDeliveryDetails && !isAnonymous;
 
   const isValid =
-    details.name.trim() &&
+    (!requiresDeliveryDetails || details.name.trim()) &&
     (!needsPhone || details.phone.trim()) &&
     (!needsEmail || details.email.trim()) &&
-    (!needsAddress || details.address.trim());
+    (!requiresDeliveryDetails || details.address.trim());
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto space-y-5">
         {/* Order Type — 2×2 grid */}
         <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">How would you like to order?</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wider mb-3">
+            How would you like to order?
+          </p>
           <div className="grid grid-cols-2 gap-3">
             {DELIVERY_OPTIONS.map((option) => (
               <button
                 key={option.value}
-                onClick={() => onChange('deliveryType', option.value)}
+                onClick={() => onChange("deliveryType", option.value)}
                 className={`flex items-center gap-2.5 p-3.5 rounded-2xl border-2 transition-all text-left ${
                   details.deliveryType === option.value
-                    ? 'border-black bg-black text-white'
-                    : 'border-gray-200 hover:border-gray-400 text-gray-700'
+                    ? "border-black bg-black text-white"
+                    : "border-gray-200 hover:border-gray-400 text-gray-700"
                 }`}
               >
-                <span className={details.deliveryType === option.value ? 'text-white' : 'text-gray-500'}>
+                <span
+                  className={
+                    details.deliveryType === option.value
+                      ? "text-white"
+                      : "text-gray-500"
+                  }
+                >
                   {option.icon}
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm leading-none">{option.label}</p>
-                  <p className={`text-xs mt-0.5 ${details.deliveryType === option.value ? 'text-white/70' : 'text-gray-400'}`}>
+                  <p
+                    className={`text-xs mt-0.5 ${details.deliveryType === option.value ? "text-white/70" : "text-gray-400"}`}
+                  >
                     {option.desc}
                   </p>
                 </div>
@@ -209,25 +285,40 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
         </div>
 
         {/* Store info for dine-in / takeout / pickup */}
-        {(details.deliveryType === 'dine-in' || details.deliveryType === 'takeout' || details.deliveryType === 'pickup') && (
+        {(details.deliveryType === "dine-in" ||
+          details.deliveryType === "takeout" ||
+          details.deliveryType === "pickup") && (
           <div className="bg-gray-50 rounded-2xl p-4 flex gap-3">
             <MapPin className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm">Fabella Coffee — Main Branch</p>
-              <p className="text-sm text-gray-500">Ramz Square, Bislig, Philippines, 8311</p>
-              <p className="text-sm text-gray-500 mt-1">Mon–Fri: 6am–10pm · Sat–Sun: 7am–11pm</p>
+              <p className="text-sm text-gray-500">
+                Ramz Square, Bislig, Philippines, 8311
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Mon–Fri: 6am–10pm · Sat–Sun: 7am–11pm
+              </p>
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-1 gap-4">
+          {!requiresDeliveryDetails && (
+            <div className="rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 text-sm text-gray-500">
+              For dine-in, takeout, and pickup orders, your name and contact
+              details are optional.
+            </div>
+          )}
+
           <div className="relative">
             <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Full Name *"
+              placeholder={
+                requiresDeliveryDetails ? "Full Name *" : "Name (optional)"
+              }
               value={details.name}
-              onChange={(e) => onChange('name', e.target.value)}
+              onChange={(e) => onChange("name", e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors"
             />
           </div>
@@ -236,9 +327,11 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="tel"
-              placeholder={needsPhone ? "Phone Number *" : "Phone Number (Optional)"}
+              placeholder={
+                needsPhone ? "Phone Number *" : "Phone Number (Optional)"
+              }
               value={details.phone}
-              onChange={(e) => onChange('phone', e.target.value)}
+              onChange={(e) => onChange("phone", e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors"
             />
           </div>
@@ -247,21 +340,23 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="email"
-              placeholder={needsEmail ? "Email Address *" : "Email Address (Optional)"}
+              placeholder={
+                needsEmail ? "Email Address *" : "Email Address (Optional)"
+              }
               value={details.email}
-              onChange={(e) => onChange('email', e.target.value)}
+              onChange={(e) => onChange("email", e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors"
             />
           </div>
 
-          {details.deliveryType === 'delivery' && (
+          {details.deliveryType === "delivery" && (
             <>
               <div className="relative">
                 <MapPin className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" />
                 <textarea
                   placeholder="Delivery Address *"
                   value={details.address}
-                  onChange={(e) => onChange('address', e.target.value)}
+                  onChange={(e) => onChange("address", e.target.value)}
                   rows={2}
                   className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors resize-none"
                 />
@@ -271,7 +366,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
                 type="text"
                 placeholder="City / Municipality"
                 value={details.city}
-                onChange={(e) => onChange('city', e.target.value)}
+                onChange={(e) => onChange("city", e.target.value)}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors"
               />
             </>
@@ -280,7 +375,7 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
           <textarea
             placeholder="Order notes (optional)"
             value={details.notes}
-            onChange={(e) => onChange('notes', e.target.value)}
+            onChange={(e) => onChange("notes", e.target.value)}
             rows={2}
             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-black placeholder:text-gray-400 transition-colors resize-none"
           />
@@ -308,7 +403,14 @@ function DeliveryDetails({ details, onChange, onNext, onBack, isAnonymous }: {
   );
 }
 
-function PaymentStep({ details, items, onChange, onNext, onBack, placingOrder }: {
+function PaymentStep({
+  details,
+  items,
+  onChange,
+  onNext,
+  onBack,
+  placingOrder,
+}: {
   details: OrderDetails;
   items: CartItem[];
   onChange: (field: keyof OrderDetails, value: string) => void;
@@ -317,20 +419,39 @@ function PaymentStep({ details, items, onChange, onNext, onBack, placingOrder }:
   placingOrder: boolean;
 }) {
   const { settings } = useApp();
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = details.deliveryType === 'delivery' ? (settings.deliveryFee ?? 49) : 0;
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
+  const deliveryFee =
+    details.deliveryType === "delivery" ? (settings.deliveryFee ?? 49) : 0;
   const total = subtotal + deliveryFee;
 
   const codDesc =
-    details.deliveryType === 'delivery'
-      ? 'Pay with cash when your order arrives'
-      : details.deliveryType === 'pickup'
-      ? 'Pay with cash when you pick up'
-      : 'Pay with cash at the counter';
+    details.deliveryType === "delivery"
+      ? "Pay with cash when your order arrives"
+      : details.deliveryType === "pickup"
+        ? "Pay with cash when you pick up"
+        : "Pay with cash at the counter";
 
-  const paymentOptions: { value: PaymentMethod; label: string; icon: React.ReactNode; desc: string }[] = [
-    { value: 'cod', label: 'Cash', icon: <Banknote className="w-5 h-5" />, desc: codDesc },
-    { value: 'gcash', label: 'GCash', icon: <Smartphone className="w-5 h-5" />, desc: 'Send payment via GCash mobile wallet' },
+  const paymentOptions: {
+    value: PaymentMethod;
+    label: string;
+    icon: React.ReactNode;
+    desc: string;
+  }[] = [
+    {
+      value: "cod",
+      label: "Cash",
+      icon: <Banknote className="w-5 h-5" />,
+      desc: codDesc,
+    },
+    {
+      value: "gcash",
+      label: "GCash",
+      icon: <Smartphone className="w-5 h-5" />,
+      desc: "Send payment via GCash mobile wallet",
+    },
   ];
 
   return (
@@ -341,26 +462,34 @@ function PaymentStep({ details, items, onChange, onNext, onBack, placingOrder }:
         {paymentOptions.map((option) => (
           <button
             key={option.value}
-            onClick={() => onChange('paymentMethod', option.value)}
+            onClick={() => onChange("paymentMethod", option.value)}
             className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-start gap-4 ${
               details.paymentMethod === option.value
-                ? 'border-black bg-black text-white'
-                : 'border-gray-200 hover:border-gray-400'
+                ? "border-black bg-black text-white"
+                : "border-gray-200 hover:border-gray-400"
             }`}
           >
-            <div className={`mt-0.5 ${details.paymentMethod === option.value ? 'text-white' : 'text-gray-500'}`}>
+            <div
+              className={`mt-0.5 ${details.paymentMethod === option.value ? "text-white" : "text-gray-500"}`}
+            >
               {option.icon}
             </div>
             <div>
               <p>{option.label}</p>
-              <p className={`text-sm mt-0.5 ${details.paymentMethod === option.value ? 'text-white/70' : 'text-gray-400'}`}>
+              <p
+                className={`text-sm mt-0.5 ${details.paymentMethod === option.value ? "text-white/70" : "text-gray-400"}`}
+              >
                 {option.desc}
               </p>
             </div>
             <div className="ml-auto flex-shrink-0 mt-0.5">
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                details.paymentMethod === option.value ? 'border-white' : 'border-gray-300'
-              }`}>
+              <div
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                  details.paymentMethod === option.value
+                    ? "border-white"
+                    : "border-gray-300"
+                }`}
+              >
                 {details.paymentMethod === option.value && (
                   <div className="w-2.5 h-2.5 rounded-full bg-white" />
                 )}
@@ -369,26 +498,34 @@ function PaymentStep({ details, items, onChange, onNext, onBack, placingOrder }:
           </button>
         ))}
 
-        {details.paymentMethod === 'gcash' && (
+        {details.paymentMethod === "gcash" && (
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 space-y-4">
             <div>
-              <p className="text-sm text-blue-800 font-medium">After placing your order, send payment to:</p>
+              <p className="text-sm text-blue-800 font-medium">
+                After placing your order, send payment to:
+              </p>
               <div className="mt-2 flex items-center justify-between bg-white border border-blue-100 p-3 rounded-xl shadow-sm">
                 <div>
                   <p className="text-xs text-gray-400">GCash Account Name</p>
-                  <p className="text-sm font-semibold text-blue-950">{settings.gcashName || 'Fabella Coffee'}</p>
+                  <p className="text-sm font-semibold text-blue-950">
+                    {settings.gcashName || "Fabella Coffee"}
+                  </p>
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-between bg-white border border-blue-100 p-3 rounded-xl shadow-sm">
                 <div>
                   <p className="text-xs text-gray-400">GCash Number</p>
-                  <p className="text-sm font-semibold text-blue-950">{settings.gcashNumber || '+63 917 123 4567'}</p>
+                  <p className="text-sm font-semibold text-blue-950">
+                    {settings.gcashNumber || "+63 917 123 4567"}
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(settings.gcashNumber || '+63 917 123 4567');
-                    alert('GCash number copied!');
+                    navigator.clipboard.writeText(
+                      settings.gcashNumber || "+63 917 123 4567",
+                    );
+                    alert("GCash number copied!");
                   }}
                   className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg transition-all"
                 >
@@ -399,7 +536,9 @@ function PaymentStep({ details, items, onChange, onNext, onBack, placingOrder }:
 
             {settings.gcashQrCode && (
               <div className="flex flex-col items-center justify-center p-3 bg-white border border-blue-100 rounded-xl shadow-sm">
-                <p className="text-xs text-gray-400 mb-2">Scan QR Code to Pay</p>
+                <p className="text-xs text-gray-400 mb-2">
+                  Scan QR Code to Pay
+                </p>
                 <div className="w-48 h-48 rounded-lg overflow-hidden border border-gray-150">
                   <img
                     src={settings.gcashQrCode}
@@ -429,9 +568,11 @@ function PaymentStep({ details, items, onChange, onNext, onBack, placingOrder }:
           <div className="flex justify-between text-sm text-gray-600">
             <span>Delivery</span>
             <span>
-              {details.deliveryType !== 'delivery'
-                ? <span className="text-green-600">Free</span>
-                : `₱${settings.deliveryFee ?? 49}`}
+              {details.deliveryType !== "delivery" ? (
+                <span className="text-green-600">Free</span>
+              ) : (
+                `₱${settings.deliveryFee ?? 49}`
+              )}
             </span>
           </div>
           <div className="flex justify-between pt-2 border-t border-gray-200">
@@ -471,26 +612,37 @@ function PaymentStep({ details, items, onChange, onNext, onBack, placingOrder }:
   );
 }
 
-function OrderConfirmation({ details, items, onClose }: {
+function OrderConfirmation({
+  details,
+  items,
+  onClose,
+}: {
   details: OrderDetails;
   items: CartItem[];
   onClose: () => void;
 }) {
   const { settings } = useApp();
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = details.deliveryType === 'delivery' ? (settings.deliveryFee ?? 49) : 0;
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
+  const deliveryFee =
+    details.deliveryType === "delivery" ? (settings.deliveryFee ?? 49) : 0;
   const total = subtotal + deliveryFee;
 
   const paymentLabels: Record<PaymentMethod, string> = {
-    cod: 'Cash',
-    gcash: 'GCash',
+    cod: "Cash",
+    gcash: "GCash",
   };
 
   const estTime =
-    details.deliveryType === 'delivery' ? '30–50 minutes' :
-    details.deliveryType === 'dine-in' ? '5–15 minutes' :
-    details.deliveryType === 'takeout' ? '10–15 minutes' :
-    '15–20 minutes';
+    details.deliveryType === "delivery"
+      ? "30–50 minutes"
+      : details.deliveryType === "dine-in"
+        ? "5–15 minutes"
+        : details.deliveryType === "takeout"
+          ? "10–15 minutes"
+          : "15–20 minutes";
 
   return (
     <div className="flex flex-col h-full items-center">
@@ -501,7 +653,9 @@ function OrderConfirmation({ details, items, onClose }: {
             <Check className="w-10 h-10 text-white" strokeWidth={2.5} />
           </div>
           <h3 className="text-2xl mb-1">Order Placed!</h3>
-          <p className="text-gray-500 text-sm">Thank you, {details.name.split(' ')[0]}!</p>
+          <p className="text-gray-500 text-sm">
+            Thank you, {details.name.split(" ")[0]}!
+          </p>
         </div>
 
         {/* Summary */}
@@ -510,10 +664,13 @@ function OrderConfirmation({ details, items, onClose }: {
             <span className="text-gray-500">Order Type</span>
             <span>{DELIVERY_TYPE_LABELS[details.deliveryType]}</span>
           </div>
-          {details.deliveryType === 'delivery' && details.address && (
+          {details.deliveryType === "delivery" && details.address && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Address</span>
-              <span className="text-right max-w-[60%]">{details.address}{details.city ? `, ${details.city}` : ''}</span>
+              <span className="text-right max-w-[60%]">
+                {details.address}
+                {details.city ? `, ${details.city}` : ""}
+              </span>
             </div>
           )}
           <div className="flex justify-between text-sm">
@@ -533,15 +690,23 @@ function OrderConfirmation({ details, items, onClose }: {
         {/* Items */}
         <div className="space-y-2">
           {items.map((item) => (
-            <div key={item.id} className="flex justify-between text-sm py-2 border-b border-gray-100 last:border-0">
-              <span>{item.name} <span className="text-gray-400">×{item.quantity}</span></span>
+            <div
+              key={item.id}
+              className="flex justify-between text-sm py-2 border-b border-gray-100 last:border-0"
+            >
+              <span>
+                {item.name}{" "}
+                <span className="text-gray-400">×{item.quantity}</span>
+              </span>
               <span>₱{item.price * item.quantity}</span>
             </div>
           ))}
         </div>
 
         <p className="text-sm text-gray-400 text-center mt-6">
-          A confirmation will be sent to {details.email}
+          {details.email.trim()
+            ? `A confirmation will be sent to ${details.email}`
+            : "No confirmation email was provided."}
         </p>
       </div>
 
@@ -555,21 +720,26 @@ function OrderConfirmation({ details, items, onClose }: {
   );
 }
 
-export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutProps) {
+export function Checkout({
+  isOpen,
+  onClose,
+  items,
+  onOrderComplete,
+}: CheckoutProps) {
   const { user, loginWithGoogle, loginAnonymously, isAnonymous } = useAuth();
   const { settings, addOrder } = useApp();
   const [step, setStep] = useState(0);
   const [signingIn, setSigningIn] = useState(false);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [details, setDetails] = useState<OrderDetails>({
-    name: '',
-    phone: '',
-    email: '',
-    address: '',
-    city: '',
-    notes: '',
-    deliveryType: 'delivery',
-    paymentMethod: 'cod',
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: "",
+    notes: "",
+    deliveryType: "delivery",
+    paymentMethod: "cod",
   });
 
   // Pre-fill user details from Google account on opening
@@ -577,8 +747,8 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
     if (isOpen && user) {
       setDetails((prev) => ({
         ...prev,
-        name: prev.name || user.user_metadata?.full_name || '',
-        email: prev.email || user.email || '',
+        name: prev.name || user.user_metadata?.full_name || "",
+        email: prev.email || user.email || "",
       }));
     }
   }, [isOpen, user]);
@@ -588,14 +758,14 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
     if (!isOpen) {
       setStep(0);
       setDetails({
-        name: '',
-        phone: '',
-        email: '',
-        address: '',
-        city: '',
-        notes: '',
-        deliveryType: 'delivery',
-        paymentMethod: 'cod',
+        name: "",
+        phone: "",
+        email: "",
+        address: "",
+        city: "",
+        notes: "",
+        deliveryType: "delivery",
+        paymentMethod: "cod",
       });
     }
   }, [isOpen]);
@@ -607,13 +777,22 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
   const handlePlaceOrder = async () => {
     setPlacingOrder(true);
     try {
-      const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const deliveryFee = details.deliveryType === 'delivery' ? (settings.deliveryFee ?? 49) : 0;
+      const subtotal = items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0,
+      );
+      const deliveryFee =
+        details.deliveryType === "delivery" ? (settings.deliveryFee ?? 49) : 0;
       const now = new Date();
-      const dateStr = now.toLocaleDateString('en-PH', {
-        month: 'short', day: 'numeric', year: 'numeric',
-        hour: '2-digit', minute: '2-digit',
+      const dateStr = now.toLocaleDateString("en-PH", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
+
+      const customerName = details.name.trim() || "Guest";
 
       const orderPayload: SavedOrder = {
         date: dateStr,
@@ -629,20 +808,20 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
         total: subtotal + deliveryFee,
         deliveryType: details.deliveryType,
         paymentMethod: details.paymentMethod,
-        name: details.name,
+        name: customerName,
         phone: details.phone,
         email: details.email,
         address: details.address,
         city: details.city,
-        status: 'pending',
+        status: "pending",
       };
 
       const savedOrder = await addOrder(orderPayload);
       setStep(3); // Go to confirmation page
       onOrderComplete(savedOrder); // Empty cart
     } catch (err) {
-      console.error('Checkout failed:', err);
-      alert('Failed to place order. Please try again.');
+      console.error("Checkout failed:", err);
+      alert("Failed to place order. Please try again.");
     } finally {
       setPlacingOrder(false);
     }
@@ -652,14 +831,14 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
     onClose();
     setStep(0);
     setDetails({
-      name: '',
-      phone: '',
-      email: '',
-      address: '',
-      city: '',
-      notes: '',
-      deliveryType: 'delivery',
-      paymentMethod: 'cod',
+      name: "",
+      phone: "",
+      email: "",
+      address: "",
+      city: "",
+      notes: "",
+      deliveryType: "delivery",
+      paymentMethod: "cod",
     });
   };
 
@@ -669,14 +848,22 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
   if (!user) {
     return (
       <>
-        <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" onClick={onClose} />
+        <div
+          className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+          onClick={onClose}
+        />
         <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white z-50 shadow-2xl flex flex-col rounded-l-3xl">
           <div className="p-6 flex justify-between items-center border-b border-gray-100">
             <div>
               <h2 className="text-xl">Checkout</h2>
-              <p className="text-sm text-gray-400 mt-0.5">Sign in to continue</p>
+              <p className="text-sm text-gray-400 mt-0.5">
+                Sign in to continue
+              </p>
             </div>
-            <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+            <button
+              onClick={onClose}
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -687,7 +874,9 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
             </div>
             <div className="text-center">
               <p className="text-lg">How would you like to order?</p>
-              <p className="text-sm text-gray-400 mt-1">Choose an option to proceed with checkout</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Choose an option to proceed with checkout
+              </p>
             </div>
 
             <div className="w-full space-y-3">
@@ -695,7 +884,11 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
                 disabled={signingIn}
                 onClick={async () => {
                   setSigningIn(true);
-                  try { await loginAnonymously(); } finally { setSigningIn(false); }
+                  try {
+                    await loginAnonymously();
+                  } finally {
+                    setSigningIn(false);
+                  }
                 }}
                 className="w-full py-3.5 bg-black text-white rounded-2xl text-sm hover:bg-black/80 transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
               >
@@ -713,7 +906,8 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
             </div>
 
             <p className="text-xs text-gray-400 text-center max-w-xs">
-              Guest orders are quick and easy. Sign in with Google to save your order history.
+              Guest orders are quick and easy. Sign in with Google to save your
+              order history.
             </p>
           </div>
         </div>
@@ -721,11 +915,19 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
     );
   }
 
-  const stepTitles = ['Review Order', 'Order Details', 'Payment', 'Order Confirmed'];
+  const stepTitles = [
+    "Review Order",
+    "Order Details",
+    "Payment",
+    "Order Confirmed",
+  ];
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" onClick={step < 3 ? handleClose : undefined} />
+      <div
+        className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+        onClick={step < 3 ? handleClose : undefined}
+      />
 
       <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white z-50 shadow-2xl flex flex-col rounded-l-3xl">
         {/* Header */}
@@ -734,7 +936,10 @@ export function Checkout({ isOpen, onClose, items, onOrderComplete }: CheckoutPr
             <h2 className="text-xl">Checkout</h2>
             <p className="text-sm text-gray-400 mt-0.5">{stepTitles[step]}</p>
           </div>
-          <button onClick={handleClose} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+          <button
+            onClick={handleClose}
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>

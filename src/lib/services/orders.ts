@@ -94,9 +94,14 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     status: "pending",
   };
 
-  if (payload.notes_data) {
-    insertData.notes_data = payload.notes_data;
-  }
+  const resolvedNotesData = payload.notes_data ?? {
+    customer: payload.notes ?? null,
+    staff: null,
+    delivery: null,
+    internal: null,
+  };
+
+  insertData.notes_data = resolvedNotesData;
 
   if (payload.queue_number !== undefined) {
     insertData.queue_number = payload.queue_number;
