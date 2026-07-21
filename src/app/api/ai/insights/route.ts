@@ -20,18 +20,67 @@ interface InsightPayload {
   }>;
 }
 
+function buildFallbackInsight(body: InsightPayload) {
+  const activeOrders = (body.orders ?? []).filter(
+    (order) => order.status !== "cancelled",
+  );
+  const revenue = activeOrders.reduce(
+    (sum, order) => sum + (order.total ?? 0),
+    0,
+  );
+
+  const itemCounts: Record<string, number> = {};
+  activeOrders.forEach((order) => {
+    (order.items ?? []).forEach((item) => {
+      itemCounts[item.name] =
+        (itemCounts[item.name] ?? 0) + (item.quantity ?? 1);
+    });
+  });
+
+  const topProducts = Object.entries(itemCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([name]) => name);
+
+  const unavailableProducts = (body.products ?? [])
+    .filter((product) => product.available === false)
+    .map((product) => product.name)
+    .slice(0, 2);
+
+  const recommendations = [
+    topProducts[0]
+      ? `Promote ${topProducts[0]} more prominently today.`
+      : "Review your top-selling items and increase visibility.",
+    unavailableProducts.length > 0
+      ? `Check availability for ${unavailableProducts.join(", ")}.`
+      : "Review pricing and bundles for slower-moving items.",
+    "Prepare the most popular items earlier during busy periods.",
+  ];
+
+  const risks = [
+    activeOrders.length < 5
+      ? "Sales activity is still limited, so trends may be early."
+      : "A small set of products may be driving most revenue.",
+    "Low stock or unavailable items can reduce conversion if not fixed quickly.",
+  ];
+
+  return {
+    summary: `You currently have ${activeOrders.length} active orders with ₱${revenue.toLocaleString()} in revenue. ${topProducts[0] ? `Popular items include ${topProducts.slice(0, 2).join(" and ")}.` : "Sales data is still limited."}`,
+    topProducts,
+    recommendations,
+    risks,
+  };
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "Missing GEMINI_API_KEY in environment variables." },
-      { status: 500 },
-    );
-  }
+  const body: InsightPayload = await request.json();
 
   try {
-    const body: InsightPayload = await request.json();
+    if (!apiKey) {
+      return NextResponse.json({ insight: buildFallbackInsight(body) });
+    }
+
     const prompt = `You are an AI assistant for a coffee shop admin dashboard. Analyze the following data and return ONLY valid JSON with these keys: summary, topProducts, recommendations, risks.
 
 Sales data:
@@ -67,13 +116,15 @@ Rules:
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data?.error?.message || "Gemini API request failed.");
+      const message = data?.error?.message || "Gemini API request failed.";
+      console.warn("Gemini insights fallback triggered:", message);
+      return NextResponse.json({ insight: buildFallbackInsight(body) });
     }
 
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     if (!text) {
-      throw new Error("No insight response returned from Gemini.");
+      return NextResponse.json({ insight: buildFallbackInsight(body) });
     }
 
     const cleanedText = text
@@ -95,14 +146,12 @@ Rules:
 
     return NextResponse.json({ insight });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to generate AI insights.",
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({
+      insight: buildFallbackInsight(body),
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to generate AI insights.",
+    });
   }
 }

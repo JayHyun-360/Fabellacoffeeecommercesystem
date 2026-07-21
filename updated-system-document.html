@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fabella Coffee System — Updated Documentation</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        line-height: 1.5;
+        color: #111827;
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 24px;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #111827;
+      }
+      h1 {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+      h2 {
+        font-size: 18px;
+        margin-top: 24px;
+        margin-bottom: 8px;
+      }
+      p,
+      li {
+        font-size: 13px;
+      }
+      ul {
+        padding-left: 20px;
+      }
+      .note {
+        background: #f9fafb;
+        border-left: 4px solid #2563eb;
+        padding: 12px 16px;
+        margin-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Fabella Coffee System — Updated System Documentation</h1>
+    <p>
+      This document reflects the current implementation of the Fabella Coffee
+      system as found in the project codebase.
+    </p>
+
+    <h2>1. System Overview</h2>
+    <p>
+      Fabella Coffee is a multi-role food and beverage ordering system built
+      with Next.js, React, TypeScript, Tailwind CSS, and Supabase. It functions
+      as a working storefront, staff operations dashboard, and admin control
+      system rather than a static UI mockup.
+    </p>
+
+    <h2>2. Core User Roles</h2>
+    <h3>Customer</h3>
+    <ul>
+      <li>
+        Browse products by category such as coffee, food, pastries, and
+        beverages
+      </li>
+      <li>Search for specific menu items</li>
+      <li>Add products to a cart</li>
+      <li>
+        Choose an order type such as dine-in, takeout, delivery, or pickup
+      </li>
+      <li>Checkout using cash or GCash</li>
+      <li>View their order history</li>
+      <li>Access FAQs and legal information</li>
+    </ul>
+
+    <h3>Staff</h3>
+    <ul>
+      <li>View incoming orders in a live queue</li>
+      <li>
+        Change order status from pending to preparing, ready, completed, or
+        cancelled
+      </li>
+      <li>Review order items, pricing, delivery fee, and payment method</li>
+      <li>Confirm or manage GCash payment flow from the staff interface</li>
+      <li>Access staff guidance and privacy-related documentation</li>
+    </ul>
+
+    <h3>Admin</h3>
+    <ul>
+      <li>Manage menu products and product availability</li>
+      <li>Create, update, or remove menu items</li>
+      <li>Upload product images and manage visual assets</li>
+      <li>Set featured and promo items</li>
+      <li>
+        Configure store settings such as business hours, contact details,
+        announcement banner, delivery fee, and GCash payment details
+      </li>
+      <li>Manage hero slides displayed on the storefront</li>
+      <li>Review orders, transactions, and sales-related summaries</li>
+      <li>Manage user roles for staff and admin access</li>
+    </ul>
+
+    <h2>3. Main Functional Modules</h2>
+    <h3>Customer Interface</h3>
+    <p>
+      The customer experience includes a hero section, promotional banner, menu
+      categories for coffee, food, pastries, and beverages, a cart drawer,
+      checkout flow, search modal, and order history.
+    </p>
+
+    <h3>Checkout and Order Management</h3>
+    <p>
+      The checkout flow supports order review, delivery and pickup method
+      selection, collection of customer details where required, payment
+      selection for cash or GCash, delivery fee calculation, and order
+      submission.
+    </p>
+
+    <h3>Staff Dashboard</h3>
+    <p>
+      The staff dashboard is designed for live queue handling. Orders are
+      grouped and displayed by status, and staff can move items through
+      preparation and completion stages.
+    </p>
+
+    <h3>Admin Dashboard</h3>
+    <p>
+      The admin dashboard acts as the control center for operations and includes
+      product management, store configuration, user access control, and
+      documentation tools.
+    </p>
+
+    <h2>4. Data and Storage</h2>
+    <p>
+      The application uses Supabase for authentication, role-based access,
+      product and store settings persistence, order data storage and retrieval,
+      and user profile management.
+    </p>
+
+    <div class="note">
+      <strong>Important correction:</strong> This system should be described as
+      a working multi-role coffee shop operations platform rather than as a
+      simple static design or mockup.
+    </div>
+
+    <h2>5. Summary</h2>
+    <p>
+      Fabella Coffee is a comprehensive coffee shop management and ordering
+      system with a customer-facing storefront, a staff operations dashboard,
+      and an admin control panel. It should be documented as a functional system
+      with real transaction workflows rather than as a simple UI mockup or
+      design bundle.
+    </p>
+  </body>
+</html>
