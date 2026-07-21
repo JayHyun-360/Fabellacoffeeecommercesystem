@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const cachedInsights = new Map<string, { value: any; expiresAt: number }>();
+
 interface InsightPayload {
   orders: Array<{
     status?: string;
@@ -19,6 +22,10 @@ interface InsightPayload {
     is_promo?: boolean;
   }>;
 }
+
+const MODEL_NAME = "gemini-2.5-flash";
+const MAX_RETRIES = 3;
+const BASE_RETRY_DELAY_MS = 2000;
 
 function buildFallbackInsight(body: InsightPayload) {
   const activeOrders = (body.orders ?? []).filter(
@@ -72,9 +79,85 @@ function buildFallbackInsight(body: InsightPayload) {
   };
 }
 
+function isRetryableGeminiError(responseStatus: number, data: any) {
+  const errorStatus = data?.error?.status;
+  const errorCode = data?.error?.code;
+  const message = data?.error?.message?.toLowerCase() || "";
+
+  return (
+    responseStatus === 429 ||
+    responseStatus === 503 ||
+    errorStatus === "RESOURCE_EXHAUSTED" ||
+    errorCode === 429 ||
+    message.includes("quota") ||
+    message.includes("rate limit") ||
+    message.includes("temporarily unavailable")
+  );
+}
+
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function generateGeminiInsight(prompt: string, apiKey: string) {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: prompt }],
+            },
+          ],
+          generationConfig: { temperature: 0.2 },
+        }),
+      },
+    );
+
+    const data = await response.json().catch(() => null);
+
+    if (response.ok) {
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      if (text) {
+        return text;
+      }
+    }
+
+    const isRetryable = isRetryableGeminiError(response.status, data);
+    if (!isRetryable || attempt >= MAX_RETRIES) {
+      throw new Error(data?.error?.message || "Gemini API request failed.");
+    }
+
+    const delayMs = Math.min(BASE_RETRY_DELAY_MS * 2 ** (attempt - 1), 5000);
+    lastError = new Error(data?.error?.message || "Gemini API request failed.");
+    console.warn(
+      `Gemini request attempt ${attempt} failed. Retrying in ${delayMs}ms...`,
+      data?.error?.message || "",
+    );
+    await sleep(delayMs);
+  }
+
+  throw lastError || new Error("Gemini request failed after retries.");
+}
+
 export async function POST(request: Request) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY;
   const body: InsightPayload = await request.json();
+  const cacheKey = JSON.stringify({
+    orders: body.orders.slice(0, 20),
+    products: body.products.slice(0, 20),
+  });
+
+  const cached = cachedInsights.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return NextResponse.json({ insight: cached.value, cached: true });
+  }
 
   try {
     if (!apiKey) {
@@ -96,37 +179,7 @@ Rules:
 - risks must be an array of 2 short concerns.
 - Keep it concise and practical for a coffee shop owner.`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: prompt }],
-            },
-          ],
-          generationConfig: { temperature: 0.2 },
-        }),
-      },
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      const message = data?.error?.message || "Gemini API request failed.";
-      console.warn("Gemini insights fallback triggered:", message);
-      return NextResponse.json({ insight: buildFallbackInsight(body) });
-    }
-
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-    if (!text) {
-      return NextResponse.json({ insight: buildFallbackInsight(body) });
-    }
-
+    const text = await generateGeminiInsight(prompt, apiKey);
     const cleanedText = text
       .replace(/```json/g, "")
       .replace(/```/g, "")
@@ -143,6 +196,11 @@ Rules:
         risks: ["Not enough data for a stronger recommendation."],
       };
     }
+
+    cachedInsights.set(cacheKey, {
+      value: insight,
+      expiresAt: Date.now() + CACHE_TTL_MS,
+    });
 
     return NextResponse.json({ insight });
   } catch (error) {
