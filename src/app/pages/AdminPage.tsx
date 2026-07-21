@@ -32,6 +32,7 @@ import {
   Tag,
   Layers,
   Menu,
+  Sparkles,
   Banknote,
   Smartphone,
   CreditCard,
@@ -670,6 +671,14 @@ function DashboardSection({
   includeRecentOrders?: boolean;
 }) {
   const { orders, products } = useApp();
+  const [aiInsight, setAiInsight] = useState<{
+    summary: string;
+    topProducts: string[];
+    recommendations: string[];
+    risks: string[];
+  } | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const chartData = useMemo(() => {
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -731,6 +740,33 @@ function DashboardSection({
 
   const recentOrders = orders.slice(0, 5);
 
+  useEffect(() => {
+    const runInsight = async () => {
+      if (orders.length === 0) return;
+      setAiLoading(true);
+      setAiError(null);
+      try {
+        const res = await fetch("/api/ai/insights", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orders, products }),
+        });
+        const data = await res.json();
+        if (!res.ok)
+          throw new Error(data.error || "Unable to load AI insights");
+        setAiInsight(data.insight || null);
+      } catch (err) {
+        setAiError(
+          err instanceof Error ? err.message : "Unable to load AI insights",
+        );
+      } finally {
+        setAiLoading(false);
+      }
+    };
+
+    runInsight();
+  }, [orders, products]);
+
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
@@ -779,6 +815,50 @@ function DashboardSection({
             <p className="text-xs text-gray-500 mt-1">{kpi.sub}</p>
           </div>
         ))}
+      </div>
+
+      <div className="bg-white rounded-3xl p-6 border border-gray-200/50 shadow-lg">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-4 h-4" />
+          <p className="text-gray-800">AI Admin Insights</p>
+        </div>
+        {aiLoading ? (
+          <p className="text-sm text-gray-500">Generating insights…</p>
+        ) : aiError ? (
+          <p className="text-sm text-red-500">{aiError}</p>
+        ) : aiInsight ? (
+          <div className="space-y-4 text-sm text-gray-700">
+            <p>{aiInsight.summary}</p>
+            <div>
+              <p className="font-medium mb-1">Top products</p>
+              <ul className="list-disc list-inside space-y-1 text-gray-600">
+                {aiInsight.topProducts.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="font-medium mb-1">Recommended actions</p>
+              <ul className="list-disc list-inside space-y-1 text-gray-600">
+                {aiInsight.recommendations.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="font-medium mb-1">Watch-outs</p>
+              <ul className="list-disc list-inside space-y-1 text-gray-600">
+                {aiInsight.risks.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">
+            Add some orders to generate AI recommendations.
+          </p>
+        )}
       </div>
 
       {/* Chart + Top Items */}
